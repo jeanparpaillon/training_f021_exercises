@@ -1,0 +1,8 @@
+# No new objects in this step — it is read-only investigation of the state
+# reached in step 2. The overlay exists so that `kubectl apply -k` on this
+# directory still lands you in the right state.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../step2-inject

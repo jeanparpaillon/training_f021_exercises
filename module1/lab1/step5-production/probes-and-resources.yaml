@@ -1,0 +1,107 @@
+# Every Bookinfo service answers GET :9080/health. Upstream ships no probes
+# at all, so until now Kubernetes considered a pod "ready" the moment the
+# container process started — which is why a freshly rolled reviews pod
+# could take traffic before Liberty had finished booting.
+#
+# Three probes, three different questions:
+#   startupProbe    "has it finished booting?"  — holds the other two off
+#   readinessProbe  "can it take traffic now?"  — controls Service endpoints
+#   livenessProbe   "is it wedged?"             — controls restarts
+#
+# reviews is a JVM on Open Liberty and needs ~30 s to boot, hence the
+# startupProbe with a wide failureThreshold: without it, a liveness probe
+# would kill the pod before it ever came up. The Python/Ruby/Node services
+# start in a second and get a plain initialDelaySeconds.
+#
+# Note the resources: requests on CPU and memory, limits on memory only.
+# A CPU limit throttles the container instead of killing it, and shows up as
+# latency nobody can explain — day 3 comes back to this.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: productpage-v1
+spec:
+  replicas: 2
+  template:
+    spec:
+      containers:
+        - name: productpage
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 9080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 9080
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 20m
+              memory: 64Mi
+            limits:
+              memory: 128Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: details-v1
+spec:
+  replicas: 2
+  template:
+    spec:
+      containers:
+        - name: details
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 9080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 9080
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              memory: 128Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ratings-v1
+spec:
+  replicas: 2
+  template:
+    spec:
+      containers:
+        - name: ratings
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 9080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 9080
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              memory: 128Mi

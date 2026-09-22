@@ -1,0 +1,14 @@
+# Bookinfo as upstream ships it: no probes, one replica each, no mesh.
+# Every step of lab 1 is an overlay on top of this, so `kubectl apply -k`
+# on any step directory brings you to that step's full state.
+#
+# No `namespace:` on purpose — each attendee applies into their own with
+# `kubectl -n "$NS" apply -k ...`.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - details.yaml
+  - ratings.yaml
+  - reviews.yaml
+  - productpage.yaml

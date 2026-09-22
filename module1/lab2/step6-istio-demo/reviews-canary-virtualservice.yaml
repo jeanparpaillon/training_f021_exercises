@@ -1,0 +1,29 @@
+# The same canary as the Linkerd step, in Istio's vocabulary: 90% v1, 10% v3,
+# with retries and a timeout.
+#
+# Compare it line by line with lab2/step5-traffic/reviews-canary-route.yaml.
+# The mechanics are identical — a client-side proxy splitting requests by
+# weight — and the difference is entirely in how much of it is a first-class
+# field (Istio) versus an annotation on a Gateway-API object (Linkerd).
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: reviews
+spec:
+  hosts:
+    - reviews
+  http:
+    - route:
+        - destination:
+            host: reviews
+            subset: v1
+          weight: 90
+        - destination:
+            host: reviews
+            subset: v3
+          weight: 10
+      timeout: 5s
+      retries:
+        attempts: 2
+        perTryTimeout: 2s
+        retryOn: 5xx

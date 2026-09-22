@@ -1,0 +1,52 @@
+# One entry point for the whole application: only `productpage` is exposed,
+# the other three services stay cluster-internal. That is the edge pattern
+# from slot 1, with Ingress as the gateway.
+#
+# The host below is a placeholder. On a shared cluster every attendee needs
+# their own, otherwise 13 Ingresses fight over the same rule — see the step
+# README for the one-liner that rewrites it.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bookinfo
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: bookinfo.CHANGEME.example
+      http:
+        paths:
+          - path: /productpage
+            pathType: Prefix
+            backend:
+              service:
+                name: productpage
+                port:
+                  number: 9080
+          - path: /static
+            pathType: Prefix
+            backend:
+              service:
+                name: productpage
+                port:
+                  number: 9080
+          - path: /login
+            pathType: Prefix
+            backend:
+              service:
+                name: productpage
+                port:
+                  number: 9080
+          - path: /logout
+            pathType: Prefix
+            backend:
+              service:
+                name: productpage
+                port:
+                  number: 9080
+          - path: /api/v1/products
+            pathType: Prefix
+            backend:
+              service:
+                name: productpage
+                port:
+                  number: 9080

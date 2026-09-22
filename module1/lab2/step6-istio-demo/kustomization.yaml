@@ -1,0 +1,26 @@
+# The Istio demo runs on its own cluster or namespace — do not point it at a
+# namespace that Linkerd already meshes. Sidecar injection comes from the
+# namespace label `istio-injection=enabled`, so the workloads below carry no
+# annotation of their own.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../lab1/step5-production
+  - bookinfo-gateway.yaml
+  - destination-rules.yaml
+  - reviews-canary-virtualservice.yaml
+
+patches:
+  # Drop lab 1's Kubernetes Ingress: the Gateway is the entry point here, and
+  # two of them on one application is exactly the confusion this step is
+  # meant to clear up.
+  - target:
+      kind: Ingress
+      name: bookinfo
+    patch: |
+      apiVersion: networking.k8s.io/v1
+      kind: Ingress
+      metadata:
+        name: bookinfo
+      $patch: delete

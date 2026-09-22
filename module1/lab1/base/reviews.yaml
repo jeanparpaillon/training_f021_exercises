@@ -1,0 +1,150 @@
+# reviews — Java/Open Liberty service, three versions behind ONE Service:
+#   v1  no ratings at all
+#   v2  ratings as black stars   (calls `ratings`)
+#   v3  ratings as red stars     (calls `ratings`)
+# The Service selects `app: reviews` only, so it fans out over all three
+# Deployments. That is what makes the round-robin of step 3 visible, and
+# what the mesh will later let you weight.
+# Adapted from samples/bookinfo/platform/kube/bookinfo.yaml (Istio, Apache-2.0).
+apiVersion: v1
+kind: Service
+metadata:
+  name: reviews
+  labels:
+    app: reviews
+    service: reviews
+spec:
+  ports:
+    - port: 9080
+      name: http
+  selector:
+    app: reviews
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: bookinfo-reviews
+  labels:
+    account: reviews
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reviews-v1
+  labels:
+    app: reviews
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reviews
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: reviews
+        version: v1
+    spec:
+      serviceAccountName: bookinfo-reviews
+      containers:
+        - name: reviews
+          image: registry.istio.io/release/examples-bookinfo-reviews-v1:1.20.3
+          imagePullPolicy: IfNotPresent
+          env:
+            # Open Liberty writes messages.log under this directory. Step 4
+            # puts a log-shipper sidecar on the other end of that volume.
+            - name: LOG_DIR
+              value: "/tmp/logs"
+          ports:
+            - containerPort: 9080
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: wlp-output
+              mountPath: /opt/ibm/wlp/output
+      volumes:
+        - name: wlp-output
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reviews-v2
+  labels:
+    app: reviews
+    version: v2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reviews
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: reviews
+        version: v2
+    spec:
+      serviceAccountName: bookinfo-reviews
+      containers:
+        - name: reviews
+          image: registry.istio.io/release/examples-bookinfo-reviews-v2:1.20.3
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: LOG_DIR
+              value: "/tmp/logs"
+          ports:
+            - containerPort: 9080
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: wlp-output
+              mountPath: /opt/ibm/wlp/output
+      volumes:
+        - name: wlp-output
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reviews-v3
+  labels:
+    app: reviews
+    version: v3
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reviews
+      version: v3
+  template:
+    metadata:
+      labels:
+        app: reviews
+        version: v3
+    spec:
+      serviceAccountName: bookinfo-reviews
+      containers:
+        - name: reviews
+          image: registry.istio.io/release/examples-bookinfo-reviews-v3:1.20.3
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: LOG_DIR
+              value: "/tmp/logs"
+          ports:
+            - containerPort: 9080
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: wlp-output
+              mountPath: /opt/ibm/wlp/output
+      volumes:
+        - name: wlp-output
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}

@@ -1,0 +1,22 @@
+# The same three reviews Deployments, seen without a virtual IP.
+#
+#   reviews           ClusterIP  -> DNS gives ONE address, kube-proxy picks a pod
+#   reviews-headless  None       -> DNS gives EVERY pod IP, the client picks
+#
+# Nothing routes through this Service; it exists so the step can compare the
+# two DNS answers side by side. A client that needs to see every endpoint
+# (a gRPC client, a stateful set member, a mesh proxy) uses the second form.
+apiVersion: v1
+kind: Service
+metadata:
+  name: reviews-headless
+  labels:
+    app: reviews
+    service: reviews-headless
+spec:
+  clusterIP: None
+  ports:
+    - port: 9080
+      name: http
+  selector:
+    app: reviews

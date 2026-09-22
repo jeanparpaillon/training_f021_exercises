@@ -1,0 +1,88 @@
+# Step 6 — trainer demo: the same thing on Istio
+
+**Slide:** Lab 2 — trainer demo: the same on Istio · **~15 min**, demo only
+
+Run by the trainer, on a separate cluster or namespace — **do not point this
+at a namespace Linkerd already meshes.** The point is not to install Istio;
+it is to put the two configuration models side by side on an application
+everyone in the room now knows by heart.
+
+## Setup (trainer)
+
+```sh
+istioctl install --set profile=demo -y
+kubectl create namespace bookinfo-istio
+kubectl label namespace bookinfo-istio istio-injection=enabled
+kubectl -n bookinfo-istio apply -k lab2/step6-istio-demo
+kubectl -n bookinfo-istio get pods      # 2/2, the sidecar is Envoy
+```
+
+Reach it through the ingress gateway:
+
+```sh
+kubectl -n istio-system get svc istio-ingressgateway
+curl -s "http://$GATEWAY_HOST/productpage" | grep -o "glyphicon-star" | wc -l
+```
+
+Kiali, for the equivalent of `linkerd viz dashboard`:
+
+```sh
+istioctl dashboard kiali
+```
+
+## The comparison, object by object
+
+| Job | Linkerd (step 5) | Istio (here) |
+| --- | --- | --- |
+| Entry point | Kubernetes `Ingress` | `Gateway` + `VirtualService` |
+| Name a version | one extra `Service` per version | `subsets` in a `DestinationRule` |
+| Split traffic | `HTTPRoute`, `backendRefs[].weight` | `VirtualService`, `route[].weight` |
+| Retries | annotation `retry.linkerd.io/http` | `retries:` field |
+| Timeout | annotation `timeout.linkerd.io/request` | `timeout:` field |
+| Sidecar | `linkerd2-proxy` (Rust, purpose-built) | Envoy (C++, general-purpose) |
+| Dashboard | `linkerd viz` | Kiali + Prometheus + Grafana + Jaeger |
+
+Two honest readings of that table, and the room should hear both:
+
+- Istio's routing is one object with named fields, versus Linkerd's Gateway-API
+  object plus annotations plus extra Services. For anything beyond a weighted
+  split — header matching, mirroring, fault injection, per-subset TLS — Istio
+  expresses it directly and Linkerd may not express it at all.
+- Every row on the Istio side is a CRD to learn, a control plane to operate
+  and a sidecar with a much larger footprint. Compare the memory of an Envoy
+  sidecar with the `linkerd-proxy` numbers from step 2.
+
+`istioctl` has no real Linkerd counterpart either: `istioctl analyze` and
+`istioctl proxy-config` exist because the configuration surface is big enough
+to need them.
+
+## Also mention
+
+**Ambient mode.** Istio can now run without per-pod sidecars: a per-node ztunnel
+for L4 and mTLS, and an optional waypoint proxy for L7. It changes the
+footprint argument above substantially, and it is the thing to re-evaluate
+before committing either way.
+
+## Debrief — mesh, library, or neither
+
+**Slide:** Lab 2 — debrief · **15 min**
+
+A decision grid, not a recommendation:
+
+| | No mesh | Library (Resilience4j, gRPC interceptors) | Mesh |
+| --- | --- | --- | --- |
+| Languages | any | one per implementation | any |
+| Touches app code | — | yes | no |
+| mTLS between services | do it yourself | do it yourself | automatic |
+| L7 metrics per route | instrument each service | per library | automatic |
+| Retries, timeouts | per call site | per library | per route |
+| Cost | none | dev time, drift between services | latency per hop, RAM per pod, a control plane |
+| Who operates it | nobody | the dev teams | the platform team |
+
+Questions worth landing on for the SGA context:
+
+- How many services, in how many languages? A mesh earns its cost across a
+  polyglot estate and rarely across three Java services.
+- Is mTLS between services a compliance requirement, or a nice-to-have?
+- Who runs the control plane at 3am, and have they upgraded one before?
+- What does the latency budget from slot 1 have left for one more hop each way?

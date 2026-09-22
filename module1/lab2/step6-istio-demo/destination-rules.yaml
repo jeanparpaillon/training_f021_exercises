@@ -1,0 +1,59 @@
+# A DestinationRule names *subsets* of a Service's pods by label. This is
+# where Istio and Linkerd part company:
+#
+#   Istio    one Service, subsets declared by label in a DestinationRule
+#   Linkerd  one extra Kubernetes Service per version, used as a backendRef
+#
+# Same outcome, and a fair thing to argue about: Istio keeps the Service list
+# clean at the cost of another CRD and another concept; Linkerd reuses an
+# object everyone already understands.
+# Adapted from samples/bookinfo/networking/destination-rule-all.yaml (Apache-2.0).
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: reviews
+spec:
+  host: reviews
+  subsets:
+    - name: v1
+      labels:
+        version: v1
+    - name: v2
+      labels:
+        version: v2
+    - name: v3
+      labels:
+        version: v3
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: productpage
+spec:
+  host: productpage
+  subsets:
+    - name: v1
+      labels:
+        version: v1
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: details
+spec:
+  host: details
+  subsets:
+    - name: v1
+      labels:
+        version: v1
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: ratings
+spec:
+  host: ratings
+  subsets:
+    - name: v1
+      labels:
+        version: v1

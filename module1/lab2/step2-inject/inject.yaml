@@ -1,0 +1,75 @@
+# The mesh gets in through an annotation. `linkerd.io/inject: enabled` on a
+# pod template makes the proxy injector add the linkerd2-proxy container (and
+# its init container) to every pod it creates.
+#
+# The usual production way is to annotate the *namespace* once, so everything
+# deployed into it is meshed:
+#
+#   kubectl annotate namespace "$NS" linkerd.io/inject=enabled
+#
+# Annotating the workloads instead, as below, is what lets this step be a
+# manifest you can apply and diff — and it is also how you mesh one
+# Deployment at a time during a real migration.
+#
+# Not annotated on purpose: `toolbox` and `loadgen`. Leaving the load
+# generator outside the mesh keeps step 3's "which calls are meshed?" answer
+# interesting.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: productpage-v1
+spec:
+  template:
+    metadata:
+      annotations:
+        linkerd.io/inject: enabled
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: details-v1
+spec:
+  template:
+    metadata:
+      annotations:
+        linkerd.io/inject: enabled
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ratings-v1
+spec:
+  template:
+    metadata:
+      annotations:
+        linkerd.io/inject: enabled
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reviews-v1
+spec:
+  template:
+    metadata:
+      annotations:
+        linkerd.io/inject: enabled
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reviews-v2
+spec:
+  template:
+    metadata:
+      annotations:
+        linkerd.io/inject: enabled
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reviews-v3
+spec:
+  template:
+    metadata:
+      annotations:
+        linkerd.io/inject: enabled

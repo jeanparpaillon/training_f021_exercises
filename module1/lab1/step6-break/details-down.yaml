@@ -1,0 +1,12 @@
+# `details` goes to zero replicas. Nothing else changes.
+#
+# productpage calls details on every render, with no timeout, no retry and
+# no fallback, so the failure of one non-critical service takes over the
+# whole page. That is the point of the step — and the starting point of
+# day 2.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: details-v1
+spec:
+  replicas: 0

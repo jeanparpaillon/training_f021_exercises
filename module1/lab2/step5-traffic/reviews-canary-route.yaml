@@ -1,0 +1,42 @@
+# 90% of the calls to `reviews` go to v1, 10% to v3.
+#
+# `parentRefs` is the Service callers already use, so nothing in productpage
+# changes. `backendRefs` are the per-version Services next to this file. The
+# proxy on the *client* side does the split, per request — not per connection
+# like kube-proxy did in lab 1 step 3.
+#
+# v2 is deliberately absent: once a route exists, the split is what you
+# declare, not whatever the endpoint list happened to contain. Shift the
+# weights to 50/50, then 0/100, and watch the page change with no rollout.
+#
+# The annotations add the other two things lab 1 step 6 was missing:
+#   retry.linkerd.io/http: 5xx     retry a failed request...
+#   retry.linkerd.io/limit: "2"    ...at most twice
+#   timeout.linkerd.io/request: 5s the whole request/response, retries included
+# Route-level annotations override the same annotations on the Service.
+#
+# Retries are only safe on idempotent requests. GET /reviews is; a POST that
+# charges a card is not. Linkerd will retry anything you tell it to, so this
+# is a decision, not a default.
+apiVersion: policy.linkerd.io/v1beta2
+kind: HTTPRoute
+metadata:
+  name: reviews-canary
+  annotations:
+    retry.linkerd.io/http: 5xx
+    retry.linkerd.io/limit: "2"
+    timeout.linkerd.io/request: 5s
+spec:
+  parentRefs:
+    - name: reviews
+      kind: Service
+      group: core
+      port: 9080
+  rules:
+    - backendRefs:
+        - name: reviews-v1
+          port: 9080
+          weight: 90
+        - name: reviews-v3
+          port: 9080
+          weight: 10

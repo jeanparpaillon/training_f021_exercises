@@ -1,0 +1,50 @@
+# Istio's entry point, in place of the Kubernetes Ingress from lab 1.
+#
+# Two objects where Ingress had one:
+#   Gateway         - which ingress-gateway pod, which port, which hosts
+#   VirtualService  - what to do with a request once it is through
+#
+# That separation is the whole Istio design: the gateway is owned by the
+# platform team, the routing by the application team.
+# Adapted from samples/bookinfo/networking/bookinfo-gateway.yaml (Apache-2.0).
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: bookinfo-gateway
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 8080
+        name: http
+        protocol: HTTP
+      hosts:
+        - "*"
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: bookinfo
+spec:
+  hosts:
+    - "*"
+  gateways:
+    - bookinfo-gateway
+  http:
+    - match:
+        - uri:
+            exact: /productpage
+        - uri:
+            prefix: /static
+        - uri:
+            exact: /login
+        - uri:
+            exact: /logout
+        - uri:
+            prefix: /api/v1/products
+      route:
+        - destination:
+            host: productpage
+            port:
+              number: 9080

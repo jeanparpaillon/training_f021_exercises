@@ -1,0 +1,30 @@
+# A shell in the namespace, to resolve names and call services from the
+# inside. busybox is deliberate: nslookup and wget are enough for this
+# step, and the image is a few MB rather than a few hundred.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: toolbox
+  labels:
+    app: toolbox
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: toolbox
+  template:
+    metadata:
+      labels:
+        app: toolbox
+    spec:
+      containers:
+        - name: shell
+          image: busybox:1.36
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c", "sleep infinity"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 32Mi

@@ -1,0 +1,10 @@
+# Lab 2 continues from the end of lab 1 (step 5, production-shaped), so a
+# single `kubectl apply -k` also catches up anyone who fell behind.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../lab1/step5-production
+
+patches:
+  - path: inject.yaml

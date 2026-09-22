@@ -2,7 +2,7 @@
 # advanced exercises, so a room of attendees does not stall on the
 # registries at the start of a slot.
 #
-#   make pull            # everything (bookinfo + emojivoto + meshes)
+#   make pull            # everything (tools + bookinfo + emojivoto + meshes)
 #   make pull-bookinfo   # lab1 only
 #   make -j4 pull        # in parallel
 #   make load            # push what was pulled into a kind cluster
@@ -15,6 +15,7 @@
 BOOKINFO_VERSION ?= 1.20.3
 ISTIO_VERSION ?= 1.31.1
 EMOJIVOTO_VERSION ?= v11
+BUSYBOX_VERSION ?= 1.36
 LINKERD_VERSION ?= edge-26.9.3
 LINKERD_EXTENSION_INIT_VERSION ?= v0.1.12
 LINKERD_PROMETHEUS_VERSION ?= v2.55.1
@@ -24,6 +25,10 @@ KIND_CLUSTER ?= kind
 DOCKERIO_REGISTRY ?= docker.io
 ISTIO_REGISTRY ?= registry.istio.io/release
 LINKERD_REGISTRY ?= cr.l5d.io/linkerd
+
+# lab1 + lab2 — toolbox, load generator, init container and log-shipper sidecar
+TOOLS_IMAGES := \
+	busybox:$(BUSYBOX_VERSION)
 
 # lab1 — the multi-service application, deployed without a mesh
 BOOKINFO_IMAGES := \
@@ -56,7 +61,7 @@ ISTIO_IMAGES := \
 	$(DOCKERIO_REGISTRY)/istio/pilot:$(ISTIO_VERSION) \
 	$(DOCKERIO_REGISTRY)/istio/proxyv2:$(ISTIO_VERSION)
 
-IMAGES := $(BOOKINFO_IMAGES) $(EMOJIVOTO_IMAGES) $(LINKERD_IMAGES) $(ISTIO_IMAGES)
+IMAGES := $(TOOLS_IMAGES) $(BOOKINFO_IMAGES) $(EMOJIVOTO_IMAGES) $(LINKERD_IMAGES) $(ISTIO_IMAGES)
 
 DOCKER ?= docker
 KIND ?= kind
@@ -68,8 +73,9 @@ KIND ?= kind
 # gives them their recipe. They match no file on disk, so they always run.
 target = $(subst :,+,$(1:%=$(2)/%))
 
-pull: pull-bookinfo pull-emojivoto pull-linkerd pull-istio
+pull: pull-tools pull-bookinfo pull-emojivoto pull-linkerd pull-istio
 
+pull-tools: $(call target,$(TOOLS_IMAGES),pull)
 pull-bookinfo: $(call target,$(BOOKINFO_IMAGES),pull)
 pull-emojivoto: $(call target,$(EMOJIVOTO_IMAGES),pull)
 pull-linkerd: $(call target,$(LINKERD_IMAGES),pull)
@@ -99,6 +105,7 @@ list:
 
 help:
 	@echo "pull            pull every image below (add -j4 to parallelise)"
+	@echo "pull-tools      lab1+2: busybox, for the toolbox, loadgen and sidecars"
 	@echo "pull-bookinfo   lab1: Bookinfo, the multi-service application"
 	@echo "pull-emojivoto  lab2: emojivoto, the Linkerd demo application"
 	@echo "pull-linkerd    lab2: Linkerd control plane and linkerd-viz"
@@ -107,4 +114,4 @@ help:
 	@echo "check           report which images are already in the local store"
 	@echo "list            print the image list"
 
-.PHONY: pull pull-bookinfo pull-emojivoto pull-linkerd pull-istio load check list help
+.PHONY: pull pull-tools pull-bookinfo pull-emojivoto pull-linkerd pull-istio load check list help
