@@ -13,19 +13,24 @@ kubectl -n "$NS" scale deploy/loadgen --replicas=1
 
 ```sh
 linkerd -n "$NS" viz stat deploy
-linkerd -n "$NS" viz stat deploy/productpage --to deploy/reviews
+linkerd -n "$NS" viz stat deploy/productpage-v1 --to svc/reviews
 ```
 
 Three numbers per service, none of which anybody instrumented: the proxy sees
 every request and reports it. That is the observability argument for a mesh in
 one command.
 
-Per-route, rather than per-service:
+Per route and per backend, from the client's side:
 
 ```sh
-linkerd -n "$NS" viz routes deploy/productpage
-linkerd -n "$NS" viz routes deploy/productpage --to deploy/reviews
+linkerd -n "$NS" viz stat-outbound deploy/productpage-v1
 ```
+
+One line per route (`[default]` until step 5 declares one) and one per
+backend it lands on, plus `TIMEOUTS` and `RETRIES` columns that stay at 0%
+until step 5 configures them. (`linkerd viz routes` is the older,
+ServiceProfile-based view: without a ServiceProfile it shows an empty
+`[DEFAULT]` line.)
 
 ## The dashboard
 
@@ -41,7 +46,7 @@ traffic instead of from documentation.
 
 ```sh
 kubectl -n "$NS" scale deploy/details-v1 --replicas=0
-linkerd -n "$NS" viz stat deploy --from deploy/productpage
+linkerd -n "$NS" viz stat deploy --from deploy/productpage-v1
 ```
 
 Without a mesh, the only signal would be a broken page. Now the success rate of the
@@ -49,7 +54,7 @@ productpage → details edge collapses, you can see how long the failing calls
 take, and `tap` shows the individual failures:
 
 ```sh
-linkerd -n "$NS" viz tap deploy/productpage | grep -v "200"
+linkerd -n "$NS" viz tap deploy/productpage-v1 | grep -v ":status=200"
 kubectl -n "$NS" scale deploy/details-v1 --replicas=1
 ```
 
