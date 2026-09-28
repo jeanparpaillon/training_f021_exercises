@@ -1,2 +1,18 @@
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    # The kind build of ingress-nginx only schedules on nodes carrying this
+    # label, and binds the node's ports 80/443 (hostPort).
+    labels:
+      ingress-ready: "true"
+    # kind nodes are containers: without these mappings nothing on the host
+    # can reach the ingress controller. Changing them means recreating the
+    # cluster (make delete create).
+    extraPortMappings:
+      - containerPort: 80
+        hostPort: 80
+        protocol: TCP
+      - containerPort: 443
+        hostPort: 443
+        protocol: TCP

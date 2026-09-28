@@ -35,7 +35,12 @@ throughout: four services, one of them in three versions. It is reused on day 2
 - `kubectl` 1.27+ (kustomize is built in, no separate binary needed)
 - a cluster: local `kind`, `k3s`, or a namespace on the shared cluster
 - an ingress controller for the Ingress in lab 1 step 1 — or use the
-  `port-forward` fallback that step documents
+  `port-forward` fallback that step documents. On `kind`, from the repo root:
+
+  ```sh
+  make create     # kind cluster; kind.yaml maps host ports 80/443 into the node
+  make ingress    # ingress-nginx controller, listening on those ports
+  ```
 - `linkerd` CLI for lab 2, installed in lab2/step1-install
 - `istioctl` for the lab 2 step 6 demo (trainer only)
 

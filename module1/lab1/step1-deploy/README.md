@@ -34,17 +34,36 @@ Six pods: `details-v1`, `ratings-v1`, `reviews-v1/v2/v3`, `productpage-v1`.
 
 ## Reach it
 
-The Ingress ships with a placeholder host, because on a shared cluster 13
-identical Ingresses would collide. Give it your own:
+An Ingress is only a routing rule. It needs an ingress controller to act on
+it, and a path from your machine to that controller:
+
+- **shared cluster**: both are in place
+- **kind**: `make create ingress` from the repo root. `kind.yaml` maps host
+  ports 80/443 into the node, and `ingress` installs ingress-nginx on them.
 
 ```sh
-kubectl -n "$NS" patch ingress bookinfo --type=json \
-  -p="[{\"op\":\"replace\",\"path\":\"/spec/rules/0/host\",\"value\":\"bookinfo-$NS.$BASE_DOMAIN\"}]"
-curl -sI "http://bookinfo-$NS.$BASE_DOMAIN/productpage"
+kubectl get ingressclass            # expect: nginx
 ```
 
-On a local `kind` cluster with no ingress controller, skip the Ingress and
-port-forward instead:
+The Ingress ships with a placeholder host. Open
+[`ingress.yaml`](ingress.yaml) and replace it with your own:
+
+```yaml
+    - host: bookinfo.127.0.0.1.nip.io   # was bookinfo.CHANGEME.example
+```
+
+Any `*.127.0.0.1.nip.io` name resolves to `127.0.0.1`, so no `/etc/hosts`
+editing. On the shared cluster, use the domain the trainer gives you, with
+your namespace in the name so 13 Ingresses don't collide. Then re-apply:
+
+```sh
+kubectl -n "$NS" apply -k lab1/step1-deploy
+kubectl -n "$NS" get ingress bookinfo                      # ADDRESS filled in
+curl -sI http://bookinfo.127.0.0.1.nip.io/productpage      # HTTP/1.1 200 OK
+curl -s  http://bookinfo.127.0.0.1.nip.io/api/v1/products  # the JSON API, same Ingress
+```
+
+No ingress controller at all? Skip the Ingress and port-forward instead:
 
 ```sh
 kubectl -n "$NS" port-forward svc/productpage 9080:9080

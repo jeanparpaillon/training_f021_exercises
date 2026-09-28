@@ -2,9 +2,10 @@
 # the other three services stay cluster-internal. That is the edge pattern
 # from slot 1, with Ingress as the gateway.
 #
-# The host below is a placeholder. On a shared cluster every attendee needs
+# The host below is a placeholder: replace it by hand before applying, e.g.
+# bookinfo.127.0.0.1.nip.io on kind. On a shared cluster every attendee needs
 # their own, otherwise 13 Ingresses fight over the same rule — see the step
-# README for the one-liner that rewrites it.
+# README.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
