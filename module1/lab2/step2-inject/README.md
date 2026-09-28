@@ -10,7 +10,7 @@ kubectl -n "$NS" apply -k lab2/step2-inject
 kubectl -n "$NS" rollout status deploy/productpage-v1
 ```
 
-This overlay starts from the end of lab 1 (step 5, production-shaped), so it
+This overlay starts from the end of lab 1 (step 3, balancing), so it
 also catches up anyone who fell behind.
 
 ## What changed
@@ -25,8 +25,7 @@ kubectl -n "$NS" get pod -l app=productpage \
 
 Do not trust the `READY` column here — look at the container lists. Current
 Linkerd injects the proxy as a **native sidecar**: an entry in
-`initContainers` with `restartPolicy: Always`, the mechanism lab 1 step 4
-mentioned. Native sidecars are init containers, so they do not add to the
+`initContainers` with `restartPolicy: Always` (Kubernetes 1.29+). Native sidecars are init containers, so they do not add to the
 `n/m` count the way an ordinary extra container would.
 
 Three things were added to each meshed pod:
@@ -45,32 +44,32 @@ Confirm the injection took:
 linkerd -n "$NS" check --proxy
 ```
 
-## Why `wait-for-details` still works — and when it would not
+## Init containers that call the network — the mesh gotcha
 
-This is the mesh gotcha most people meet the hard way.
+This is the one most people meet the hard way.
 
-The init container from lab 1 step 4 makes a network call. Under a mesh, that
-call is redirected by iptables to the proxy on localhost. If the proxy is not
+A common pattern is an init container that waits for a dependency (`until
+wget http://details:9080/health; do sleep 2; done`). Under a mesh, that call
+is redirected by iptables to the proxy on localhost. If the proxy is not
 running yet, the call is refused — and an init container that retries forever
 means a pod that **never starts**. Whole namespaces have been taken down by
 exactly this during a mesh rollout.
 
-It works here because the proxy is a native sidecar and therefore starts
-*before* the later init containers. Check the order:
+With a native sidecar it works, because the proxy starts *before* any init
+container listed after it. Check the order:
 
 ```sh
 kubectl -n "$NS" get pod -l app=productpage \
   -o jsonpath='{range .items[0].spec.initContainers[*]}{.name}{" "}{.restartPolicy}{"\n"}{end}'
-kubectl -n "$NS" logs deploy/productpage-v1 -c wait-for-details
 ```
 
-`linkerd-init`, then `linkerd-proxy` (`restartPolicy: Always`), then
-`wait-for-details`.
+`linkerd-init`, then `linkerd-proxy` (`restartPolicy: Always`): anything
+appended after them would already have a running proxy.
 
 With an older mesh, or with native sidecars turned off
 (`linkerd install --set proxy.nativeSidecar=false`), the proxy is an ordinary
-container that only starts after every init container has finished — and this
-pod hangs in `Init:1/2` forever. The escape hatches are
+container that only starts after every init container has finished — and such
+a pod hangs in `Init:1/2` forever. The escape hatches are
 `config.linkerd.io/skip-outbound-ports` on the pod, or not making network
 calls from init containers at all.
 

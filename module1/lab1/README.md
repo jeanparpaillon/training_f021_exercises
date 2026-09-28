@@ -45,9 +45,6 @@ make -C .. load          # kind only: pulls everything, then pushes it into
 | 1 | [deploy Bookinfo](step1-deploy/) | Lab 1 — deploy Bookinfo | 15 min |
 | 2 | [service discovery](step2-discovery/) | Lab 1 — service discovery | 15 min |
 | 3 | [round-robin across versions](step3-balancing/) | Lab 1 — round-robin across reviews versions | 10 min |
-| 4 | [init container and sidecar](step4-patterns/) | Lab 1 — init container and sidecar | 15 min |
-| 5 | [make it production-shaped](step5-production/) | Lab 1 — make it production-shaped | 20 min |
-| 6 | [break something](step6-break/) | Lab 1 — break something + debrief | 10 min + 15 |
 
 ## How the steps work
 
@@ -55,15 +52,15 @@ Each step is a kustomize overlay on the one before it, so **applying a step
 applies everything up to it**. Nobody has to catch up:
 
 ```sh
-kubectl -n "$NS" apply -k lab1/step4-patterns    # lands you at the end of step 4
+kubectl -n "$NS" apply -k lab1/step3-balancing   # lands you at the end of step 3
 ```
 
 See what a step would change before applying it:
 
 ```sh
-kubectl kustomize lab1/step5-production            # the full rendered state
-diff <(kubectl kustomize lab1/step4-patterns) \
-     <(kubectl kustomize lab1/step5-production)    # just this step's delta
+kubectl kustomize lab1/step3-balancing             # the full rendered state
+diff <(kubectl kustomize lab1/step2-discovery) \
+     <(kubectl kustomize lab1/step3-balancing)     # just this step's delta
 ```
 
 [`base/`](base/) is Bookinfo as Istio ships it — no probes, one replica each,
@@ -73,8 +70,8 @@ to "what did this step actually do?".
 ## Cleanup
 
 ```sh
-kubectl -n "$NS" delete -k lab1/step6-break
+kubectl -n "$NS" delete -k lab1/step3-balancing
 ```
 
 Keep it running if you are going straight into lab 2 — lab 2 starts from the
-step 5 state.
+step 3 state.

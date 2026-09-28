@@ -21,7 +21,7 @@ throughout: four services, one of them in three versions. It is reused on day 2
 - **One namespace per attendee.** No manifest hardcodes a namespace; every
   command is `kubectl -n "$NS" ...`. Set `NS` once and forget it.
 - **Steps are cumulative kustomize overlays.** `kubectl -n "$NS" apply -k
-  lab1/step4-patterns` brings you to the end of step 4 from anywhere,
+  lab1/step3-balancing` brings you to the end of step 3 from anywhere,
   including from an empty namespace. Nobody has to catch up, and nobody has to
   redo the earlier steps by hand.
 - **Read the diff, not just the file.** Each step directory holds only what it

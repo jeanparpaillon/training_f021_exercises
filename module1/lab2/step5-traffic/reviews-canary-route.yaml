@@ -9,7 +9,7 @@
 # declare, not whatever the endpoint list happened to contain. Shift the
 # weights to 50/50, then 0/100, and watch the page change with no rollout.
 #
-# The annotations add the other two things lab 1 step 6 was missing:
+# The annotations add two things plain Kubernetes Services cannot do:
 #   retry.linkerd.io/http: 5xx     retry a failed request...
 #   retry.linkerd.io/limit: "2"    ...at most twice
 #   timeout.linkerd.io/request: 5s the whole request/response, retries included

@@ -44,8 +44,8 @@ DestinationRule and no extra Services — compare with step 6.
 
 ## Retries and timeouts
 
-The annotations on the HTTPRoute are the other half of what lab 1 step 6 was
-missing:
+The annotations on the HTTPRoute add what plain Kubernetes Services cannot do
+at all:
 
 ```yaml
 retry.linkerd.io/http: 5xx      # retry on server errors

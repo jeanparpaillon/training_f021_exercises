@@ -12,7 +12,7 @@ properly.
 ## Before you start
 
 You need the end state of lab 1. If you have it, keep it. If not, step 2
-applies it for you — every lab 2 overlay builds on `lab1/step5-production`.
+applies it for you — every lab 2 overlay builds on `lab1/step3-balancing`.
 
 ```sh
 export NS=<your-namespace>

@@ -37,20 +37,20 @@ Walk the topology graph: productpage → details, productpage → reviews,
 reviews → ratings. It is the diagram from lab 1 step 1, drawn from live
 traffic instead of from documentation.
 
-## Do lab 1 step 6 again, with instruments this time
+## Break something, with instruments this time
 
 ```sh
 kubectl -n "$NS" scale deploy/details-v1 --replicas=0
 linkerd -n "$NS" viz stat deploy --from deploy/productpage
 ```
 
-In lab 1 the only signal was a broken page. Now the success rate of the
+Without a mesh, the only signal would be a broken page. Now the success rate of the
 productpage → details edge collapses, you can see how long the failing calls
 take, and `tap` shows the individual failures:
 
 ```sh
 linkerd -n "$NS" viz tap deploy/productpage | grep -v "200"
-kubectl -n "$NS" scale deploy/details-v1 --replicas=2
+kubectl -n "$NS" scale deploy/details-v1 --replicas=1
 ```
 
 ## What this is not
