@@ -23,10 +23,11 @@ kubectl -n "$NS" get pod -l app=productpage \
   -o jsonpath='{range .items[0].spec.containers[*]}{.name}{"\n"}{end}'
 ```
 
-Do not trust the `READY` column here — look at the container lists. Current
-Linkerd injects the proxy as a **native sidecar**: an entry in
-`initContainers` with `restartPolicy: Always` (Kubernetes 1.29+). Native sidecars are init containers, so they do not add to the
-`n/m` count the way an ordinary extra container would.
+Meshed pods go from `READY 1/1` to `2/2` — but the proxy is not in
+`spec.containers`. Current Linkerd injects it as a **native sidecar**: an
+entry in `initContainers` with `restartPolicy: Always` (Kubernetes 1.29+),
+which `kubectl` still counts in the `READY` column. Look at the container
+lists to see where it actually sits.
 
 Three things were added to each meshed pod:
 
