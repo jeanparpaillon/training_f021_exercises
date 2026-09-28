@@ -1,0 +1,59 @@
+# One PodDisruptionBudget per Deployment that has two replicas: a drain,
+# a node upgrade or the cluster autoscaler may evict at most one of the two
+# at a time. The eviction API refuses the second one until the first
+# replacement is Ready, and `kubectl drain` waits and retries.
+#
+# A PDB protects against VOLUNTARY disruptions only — the ones that go
+# through the eviction API. A node that crashes, a kernel OOM kill or a
+# `kubectl delete pod` do not ask it.
+#
+# The selector includes `version` so each reviews Deployment keeps its own
+# replica. `app: reviews` alone would allow draining both v2 pods at once as
+# long as v1 and v3 are up — acceptable for availability, not for a
+# canary you are measuring.
+#
+# minAvailable: 1 is only safe because replicas is 2. On a one-replica
+# Deployment it makes every drain wait forever (see the step questions).
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: productpage-v1
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: productpage
+      version: v1
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: reviews-v1
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: reviews
+      version: v1
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: reviews-v2
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: reviews
+      version: v2
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: reviews-v3
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: reviews
+      version: v3

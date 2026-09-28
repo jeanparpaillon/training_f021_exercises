@@ -1,0 +1,148 @@
+# Two replicas of everything a user request cannot do without, spread so
+# that one node (or one zone) going away never takes both.
+#
+# replicas: 2 is not HA on its own: the scheduler is free to put both pods
+# on the same node. topologySpreadConstraints make it keep them apart:
+#
+#   kubernetes.io/hostname       DoNotSchedule   hard: never two replicas on
+#                                                one node while another has
+#                                                none (maxSkew 1)
+#   topology.kubernetes.io/zone  ScheduleAnyway  soft: prefer zones, but
+#                                                schedule even if the zones
+#                                                cannot be balanced
+#
+# The zone rule is soft on purpose: module2/kind.yaml has two workers in
+# zone-a and one in zone-b, and a hard zone rule can leave pods Pending
+# during a drain. A hard rule belongs where the capacity per zone is planned
+# for it.
+#
+# nodeTaintsPolicy: Honor leaves out the nodes this pod cannot run on (the
+# tainted control plane). With the default, Ignore, they count as empty
+# domains and skew the arithmetic.
+#
+# matchLabelKeys: pod-template-hash counts only the pods of the current
+# ReplicaSet, so the old pods of a rolling update do not push the new ones
+# onto the wrong nodes.
+#
+# details and ratings stay at one replica: productpage and reviews already
+# degrade gracefully without them (step 6). That is a choice, and the
+# questions come back to it.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: productpage-v1
+spec:
+  replicas: 2
+  template:
+    spec:
+      topologySpreadConstraints:
+        - topologyKey: kubernetes.io/hostname
+          maxSkew: 1
+          whenUnsatisfiable: DoNotSchedule
+          nodeTaintsPolicy: Honor
+          labelSelector:
+            matchLabels:
+              app: productpage
+              version: v1
+          matchLabelKeys:
+            - pod-template-hash
+        - topologyKey: topology.kubernetes.io/zone
+          maxSkew: 1
+          whenUnsatisfiable: ScheduleAnyway
+          nodeTaintsPolicy: Honor
+          labelSelector:
+            matchLabels:
+              app: productpage
+              version: v1
+          matchLabelKeys:
+            - pod-template-hash
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reviews-v1
+spec:
+  replicas: 2
+  template:
+    spec:
+      topologySpreadConstraints:
+        - topologyKey: kubernetes.io/hostname
+          maxSkew: 1
+          whenUnsatisfiable: DoNotSchedule
+          nodeTaintsPolicy: Honor
+          labelSelector:
+            matchLabels:
+              app: reviews
+              version: v1
+          matchLabelKeys:
+            - pod-template-hash
+        - topologyKey: topology.kubernetes.io/zone
+          maxSkew: 1
+          whenUnsatisfiable: ScheduleAnyway
+          nodeTaintsPolicy: Honor
+          labelSelector:
+            matchLabels:
+              app: reviews
+              version: v1
+          matchLabelKeys:
+            - pod-template-hash
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reviews-v2
+spec:
+  replicas: 2
+  template:
+    spec:
+      topologySpreadConstraints:
+        - topologyKey: kubernetes.io/hostname
+          maxSkew: 1
+          whenUnsatisfiable: DoNotSchedule
+          nodeTaintsPolicy: Honor
+          labelSelector:
+            matchLabels:
+              app: reviews
+              version: v2
+          matchLabelKeys:
+            - pod-template-hash
+        - topologyKey: topology.kubernetes.io/zone
+          maxSkew: 1
+          whenUnsatisfiable: ScheduleAnyway
+          nodeTaintsPolicy: Honor
+          labelSelector:
+            matchLabels:
+              app: reviews
+              version: v2
+          matchLabelKeys:
+            - pod-template-hash
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reviews-v3
+spec:
+  replicas: 2
+  template:
+    spec:
+      topologySpreadConstraints:
+        - topologyKey: kubernetes.io/hostname
+          maxSkew: 1
+          whenUnsatisfiable: DoNotSchedule
+          nodeTaintsPolicy: Honor
+          labelSelector:
+            matchLabels:
+              app: reviews
+              version: v3
+          matchLabelKeys:
+            - pod-template-hash
+        - topologyKey: topology.kubernetes.io/zone
+          maxSkew: 1
+          whenUnsatisfiable: ScheduleAnyway
+          nodeTaintsPolicy: Honor
+          labelSelector:
+            matchLabels:
+              app: reviews
+              version: v3
+          matchLabelKeys:
+            - pod-template-hash

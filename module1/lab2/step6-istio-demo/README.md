@@ -9,25 +9,60 @@ everyone in the room now knows by heart.
 
 ## Setup (trainer)
 
+Nothing from lab 1 or lab 2 needs resetting: the overlay builds from
+`lab1/step3-balancing` into a **fresh namespace**, so it starts from zero by
+construction. Istio and Linkerd can share the cluster — Istio only injects
+into namespaces labelled `istio-injection=enabled`, Linkerd only into
+workloads or namespaces annotated for it.
+
+Get `istioctl` at the version `../Makefile` pre-pulls, then install:
+
 ```sh
+curl -sSL https://istio.io/downloadIstio | ISTIO_VERSION=1.31.1 sh -
+export PATH="$PWD/istio-1.31.1/bin:$PATH"
+istioctl x precheck
 istioctl install --set profile=demo -y
+```
+
+Deploy the same Bookinfo, meshed by Istio:
+
+```sh
 kubectl create namespace bookinfo-istio
 kubectl label namespace bookinfo-istio istio-injection=enabled
 kubectl -n bookinfo-istio apply -k lab2/step6-istio-demo
 kubectl -n bookinfo-istio get pods      # 2/2, the sidecar is Envoy
+istioctl -n bookinfo-istio analyze      # no validation issues
 ```
 
-Reach it through the ingress gateway:
+Reach it through the ingress gateway. On kind its `LoadBalancer` Service stays
+`<pending>` (no cloud load balancer, and host port 80 already belongs to
+ingress-nginx), so port-forward it:
 
 ```sh
-kubectl -n istio-system get svc istio-ingressgateway
-curl -s "http://$GATEWAY_HOST/productpage" | grep -o "glyphicon-star" | wc -l
+kubectl -n istio-system port-forward svc/istio-ingressgateway 8081:80 &
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8081/productpage   # 200
+for i in $(seq 1 60); do curl -s http://localhost:8081/productpage \
+  | grep -o "reviews-v[0-9]" | head -1; done | sort | uniq -c           # ~90/10
 ```
 
-Kiali, for the equivalent of `linkerd viz dashboard`:
+Kiali, for the equivalent of `linkerd viz dashboard`. It is **not** part of
+`istioctl install`: apply the addons shipped in the release first (Kiali needs
+Prometheus for its graph):
 
 ```sh
+kubectl apply -f istio-1.31.1/samples/addons/prometheus.yaml \
+              -f istio-1.31.1/samples/addons/kiali.yaml
+kubectl -n istio-system rollout status deploy/kiali
 istioctl dashboard kiali
+```
+
+Cleanup, end of day:
+
+```sh
+kubectl delete namespace bookinfo-istio
+kubectl delete -f istio-1.31.1/samples/addons/kiali.yaml \
+               -f istio-1.31.1/samples/addons/prometheus.yaml
+istioctl uninstall --purge -y && kubectl delete namespace istio-system
 ```
 
 ## The comparison, object by object

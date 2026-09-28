@@ -1,0 +1,139 @@
+# Graceful shutdown, on every Bookinfo Deployment.
+#
+# When a pod is deleted, two things start AT THE SAME TIME:
+#   - the endpoints controller removes it from the EndpointSlice, and
+#     every kube-proxy, ingress controller and mesh proxy then updates on
+#     its own schedule;
+#   - the kubelet runs preStop, then sends SIGTERM to the container.
+# Without preStop, the application stops accepting while clients are still
+# being sent to it: the failed requests of every rolling update.
+#
+#   preStop sleep 5 s    the pod keeps serving while the endpoint removal
+#                        propagates. Kubernetes' own sleep action (GA in
+#                        1.33): no dependency on a `sleep` binary in the
+#                        image, which a distroless image would not have.
+#   terminationGracePeriodSeconds 30
+#                        the budget for EVERYTHING: preStop + the time the
+#                        application needs to finish in-flight requests
+#                        after SIGTERM. Exceeded = SIGKILL. 30 s is the
+#                        default; it is written out because it now has to
+#                        stay larger than the sleep plus the drain.
+#   config.alpha.linkerd.io/proxy-wait-before-exit-seconds
+#                        the Linkerd proxy must outlive the application
+#                        container, or the last responses have no way out.
+#                        With the proxy as an ordinary container, both get
+#                        SIGTERM together and this annotation adds a
+#                        preStop sleep to the proxy. With the proxy as a
+#                        NATIVE sidecar (the default here, see module 1
+#                        lab 2 step 2) the kubelet already stops sidecars
+#                        after the application containers, and Linkerd adds
+#                        no hook: the annotation is then a no-op. It is kept
+#                        because the manifest must not depend on how the
+#                        mesh happens to be installed.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: productpage-v1
+spec:
+  template:
+    metadata:
+      annotations:
+        config.alpha.linkerd.io/proxy-wait-before-exit-seconds: "10"
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: productpage
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 5
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: details-v1
+spec:
+  template:
+    metadata:
+      annotations:
+        config.alpha.linkerd.io/proxy-wait-before-exit-seconds: "10"
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: details
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 5
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ratings-v1
+spec:
+  template:
+    metadata:
+      annotations:
+        config.alpha.linkerd.io/proxy-wait-before-exit-seconds: "10"
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: ratings
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 5
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reviews-v1
+spec:
+  template:
+    metadata:
+      annotations:
+        config.alpha.linkerd.io/proxy-wait-before-exit-seconds: "10"
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: reviews
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 5
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reviews-v2
+spec:
+  template:
+    metadata:
+      annotations:
+        config.alpha.linkerd.io/proxy-wait-before-exit-seconds: "10"
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: reviews
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 5
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reviews-v3
+spec:
+  template:
+    metadata:
+      annotations:
+        config.alpha.linkerd.io/proxy-wait-before-exit-seconds: "10"
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: reviews
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 5

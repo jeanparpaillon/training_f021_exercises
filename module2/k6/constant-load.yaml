@@ -1,0 +1,118 @@
+# The day-2 load generator: a k6 run against productpage at a constant
+# arrival rate, with a summary at the end (failed-request ratio, p95/p99).
+#
+#   kubectl -n "$NS" apply -f k6/constant-load.yaml
+#   kubectl -n "$NS" logs -f job/k6 -c k6    # the summary is printed at the end
+#
+# A Job runs once. To run again, delete it first (the ConfigMap can stay):
+#
+#   kubectl -n "$NS" delete job k6 --ignore-not-found
+#   kubectl -n "$NS" apply -f k6/constant-load.yaml
+#
+# RATE and DURATION below are the knobs. 20 req/s for 3 min leaves time to
+# start a rollout or a drain once the numbers have settled.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k6-script
+  labels:
+    app: k6
+data:
+  script.js: |
+    // Constant arrival rate: RATE requests per second whatever the latency.
+    // A closed-loop generator (N users, each waiting for its answer) slows
+    // down when the service does and hides the problem; an open-loop one
+    // keeps pushing, like real users do.
+    import http from 'k6/http';
+    import { check } from 'k6';
+
+    export const options = {
+      scenarios: {
+        constant: {
+          executor: 'constant-arrival-rate',
+          rate: Number(__ENV.RATE),
+          timeUnit: '1s',
+          duration: __ENV.DURATION,
+          preAllocatedVUs: 20,
+          maxVUs: 200,
+        },
+      },
+      // The game-day steady state. Crossing it marks the run as failed
+      // (the Job ends Failed), but k6 still runs to the end and prints
+      // the summary.
+      thresholds: {
+        http_req_failed: ['rate<0.01'],
+        http_req_duration: ['p(99)<1000'],
+      },
+      summaryTrendStats: ['avg', 'med', 'p(95)', 'p(99)', 'max'],
+    };
+
+    export default function () {
+      const res = http.get(__ENV.TARGET, { timeout: '10s' });
+      // A 200 is not the whole story: productpage answers 200 with an
+      // apology in the page when a dependency is down. The checks count
+      // degraded pages separately from failed requests.
+      check(res, {
+        'status 200': (r) => r.status === 200,
+        'reviews shown': (r) => !!r.body && !r.body.includes('reviews are currently unavailable'),
+        'details shown': (r) => !!r.body && !r.body.includes('details are currently unavailable'),
+        'ratings shown': (r) => !!r.body && !r.body.includes('Ratings service is currently unavailable'),
+      });
+    }
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: k6
+  labels:
+    app: k6
+spec:
+  # One run, one summary. A failed threshold is a result, not a crash to
+  # retry.
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app: k6
+      annotations:
+        # k6 is IN the mesh, as a client of productpage like any other
+        # (an ingress controller, another service). Its proxy balances per
+        # request over the live endpoints, so a pod leaving the endpoints
+        # stops getting requests at once.
+        #
+        # Outside the mesh, k6 would go through kube-proxy with keep-alive
+        # connections, which stay pinned to a pod after it has left the
+        # endpoints: every rollout would cost requests however well the
+        # server shuts down. That is a real client-side problem, but not
+        # the one this lab is about.
+        #
+        # The proxy is a native sidecar: the Job still completes when k6
+        # exits. Read the logs with `-c k6`.
+        linkerd.io/inject: enabled
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: k6
+          image: grafana/k6:2.3.0
+          imagePullPolicy: IfNotPresent
+          args: ["run", "--quiet", "/scripts/script.js"]
+          env:
+            - name: TARGET
+              value: http://productpage:9080/productpage
+            - name: RATE
+              value: "20"
+            - name: DURATION
+              value: 3m
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+          volumeMounts:
+            - name: script
+              mountPath: /scripts
+      volumes:
+        - name: script
+          configMap:
+            name: k6-script

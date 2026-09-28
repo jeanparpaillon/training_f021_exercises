@@ -1,0 +1,32 @@
+# Module 2 — a multi-node kind cluster, so that draining a node (lab 1
+# step 4) and spreading pods across failure domains mean something.
+#
+#   make -C .. delete
+#   kind create cluster --name training --config module2/kind.yaml
+#   make -C .. ingress
+#
+# The control plane keeps the ingress mapping of the day-1 cluster (see
+# ../kind.yaml). The three workers carry a zone label each; two share zone
+# `a`, so a zone spread and a hostname spread give different answers.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    labels:
+      ingress-ready: "true"
+    extraPortMappings:
+      - containerPort: 80
+        hostPort: 80
+        protocol: TCP
+      - containerPort: 443
+        hostPort: 443
+        protocol: TCP
+  - role: worker
+    labels:
+      topology.kubernetes.io/zone: zone-a
+  - role: worker
+    labels:
+      topology.kubernetes.io/zone: zone-a
+  - role: worker
+    labels:
+      topology.kubernetes.io/zone: zone-b

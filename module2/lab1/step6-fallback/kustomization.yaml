@@ -1,0 +1,7 @@
+# No new objects in this step: the fallback it looks at is application
+# code. This overlay is the end state of lab 1, and lab 2 builds on it.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../step5-timeouts

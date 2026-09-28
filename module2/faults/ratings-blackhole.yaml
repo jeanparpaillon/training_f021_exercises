@@ -1,0 +1,54 @@
+# A `ratings` that accepts connections and never answers: the slow
+# dependency, at its worst. Same `app: ratings` label, so the `ratings`
+# Service sends it traffic like any other replica.
+#
+# It is the ratings image itself with a two-line Node server that reads the
+# request and never writes a response. No new image to pull, and the
+# connection behaves exactly like a real, stuck service: TCP accepts, the
+# request is read, then nothing.
+#
+# Replace ratings with it:
+#   kubectl -n "$NS" apply -f faults/ratings-blackhole.yaml
+#   kubectl -n "$NS" scale deploy/ratings-v1 --replicas=0
+#
+# Put ratings back:
+#   kubectl -n "$NS" scale deploy/ratings-v1 --replicas=1
+#   kubectl -n "$NS" delete -f faults/ratings-blackhole.yaml
+#
+# Used by lab 1 (steps 2 and 5) and replayed in lab 2.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ratings-blackhole
+  labels:
+    app: ratings
+    version: blackhole
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ratings
+      version: blackhole
+  template:
+    metadata:
+      labels:
+        app: ratings
+        version: blackhole
+      annotations:
+        linkerd.io/inject: enabled
+    spec:
+      serviceAccountName: bookinfo-ratings
+      containers:
+        - name: ratings
+          image: registry.istio.io/release/examples-bookinfo-ratings-v1:1.20.3
+          imagePullPolicy: IfNotPresent
+          command:
+            - node
+            - -e
+            - |
+              const http = require('http');
+              const server = http.createServer(() => { /* never respond */ });
+              server.requestTimeout = 0;   // Node would otherwise answer 408 after 5 min
+              server.listen(9080);
+          ports:
+            - containerPort: 9080

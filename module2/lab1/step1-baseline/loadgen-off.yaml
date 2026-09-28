@@ -1,0 +1,8 @@
+# The day-1 loadgen: one request per second, no latency statistics. Kept in
+# the namespace (lab 1 of module 1 owns it) but quiet; k6 replaces it.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loadgen
+spec:
+  replicas: 0

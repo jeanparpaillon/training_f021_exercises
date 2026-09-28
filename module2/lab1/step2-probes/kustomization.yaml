@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../step1-baseline
+
+patches:
+  - path: probes.yaml
+
+# trap-liveness.yaml is NOT listed here: it is applied by hand with
+# `kubectl patch`, watched failing, then reverted by re-applying this step.

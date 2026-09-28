@@ -1,0 +1,9 @@
+# No new objects in this step: the timeouts it looks at are hardcoded in the
+# Bookinfo images and cannot be set from a manifest. The fault it uses lives
+# in ../../faults/ and is applied by hand. The overlay exists so that
+# `kubectl apply -k` on this directory still lands you in the right state.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../step4-spread

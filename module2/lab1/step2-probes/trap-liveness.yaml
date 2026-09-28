@@ -1,0 +1,28 @@
+# THE TRAP — do not keep this. Applied by hand, watched, then reverted:
+#
+#   kubectl -n "$NS" patch deploy productpage-v1 --patch-file lab1/step2-probes/trap-liveness.yaml
+#   ...
+#   kubectl -n "$NS" apply -k lab1/step2-probes        # back to the sane probe
+#
+# A liveness probe that looks thorough: it fetches the real page, so it
+# "checks everything". It does — /productpage calls details, reviews and,
+# through reviews, ratings. The moment any of them is slow, the probe times
+# out after 1 s and the kubelet restarts a productpage that was perfectly
+# healthy. A restart fixes nothing downstream, so it fails again, and the
+# service goes from degraded to down.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: productpage-v1
+spec:
+  template:
+    spec:
+      containers:
+        - name: productpage
+          livenessProbe:
+            httpGet:
+              path: /productpage
+              port: 9080
+            periodSeconds: 5
+            timeoutSeconds: 1
+            failureThreshold: 2

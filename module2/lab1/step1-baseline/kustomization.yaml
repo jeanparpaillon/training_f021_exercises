@@ -1,0 +1,15 @@
+# Day 2 starts from the end of module 1 lab 2 step 4: Bookinfo meshed, no
+# HTTPRoute. The step 5 route is left out on purpose — its retries and
+# timeout would hide the failures this lab needs you to see.
+#
+# Nothing is hardened yet. This step only swaps the load generator: the
+# day-1 loadgen is scaled to 0 and k6 (../../k6/constant-load.yaml, run as
+# a Job, outside kustomize) takes over.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../../module1/lab2/step4-metrics
+
+patches:
+  - path: loadgen-off.yaml

@@ -1,0 +1,182 @@
+# Three probes, three questions — and each probe only answers its own.
+#
+#   startupProbe    "has it finished booting?"   gates the other two
+#   readinessProbe  "should it get traffic now?" failing = out of the
+#                                                EndpointSlice, no restart
+#   livenessProbe   "is it stuck beyond repair?" failing = container restart
+#
+# All three hit each service's own /health, which answers from the process
+# alone and calls no other service. That is the whole point: a probe that
+# follows the calls to the dependencies turns "ratings is slow" into
+# "everything restarts" (trap-liveness.yaml shows how).
+#
+# Readiness is quick to react (2 misses x 5 s); liveness is slow and
+# forgiving (3 misses x 10 s, 5 s timeout): taking a pod out of rotation is
+# cheap and reversible, killing it is neither.
+#
+# Only `reviews` gets a startupProbe. Open Liberty takes tens of seconds to
+# boot; without it you would need a large initialDelaySeconds on liveness,
+# which also delays detection of a pod that hangs later. Here the startup
+# probe allows up to 60 x 2 s = 120 s, and the moment it succeeds the other
+# two take over at their normal pace.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: productpage-v1
+spec:
+  template:
+    spec:
+      containers:
+        - name: productpage
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 9080
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 2
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 9080
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: details-v1
+spec:
+  template:
+    spec:
+      containers:
+        - name: details
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 9080
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 2
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 9080
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ratings-v1
+spec:
+  template:
+    spec:
+      containers:
+        - name: ratings
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 9080
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 2
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 9080
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reviews-v1
+spec:
+  template:
+    spec:
+      containers:
+        - name: reviews
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 9080
+            periodSeconds: 2
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 9080
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 2
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 9080
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reviews-v2
+spec:
+  template:
+    spec:
+      containers:
+        - name: reviews
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 9080
+            periodSeconds: 2
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 9080
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 2
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 9080
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reviews-v3
+spec:
+  template:
+    spec:
+      containers:
+        - name: reviews
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 9080
+            periodSeconds: 2
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 9080
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 2
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 9080
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
