@@ -1,0 +1,8 @@
+# No new objects in the application: the experiment next to this file is a
+# fault, applied by hand while k6 runs and deleted afterwards — never part
+# of the overlay, or every `apply -k` would start it again.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../step4-chaos-mesh

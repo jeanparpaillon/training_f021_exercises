@@ -1,0 +1,36 @@
+# Fault injection, built into Istio: the caller's Envoy fakes the failure,
+# the ratings pods are never touched. Replaces the `ratings` VirtualService
+# of this step; revert with `kubectl -n bookinfo-istio apply -k ...`.
+#
+#   abort 50 %   answer 500 without calling ratings
+#   delay 50 %   wait 2 s, then call ratings
+#
+# Two things to point out during the demo:
+#   - the fault filter runs BEFORE the router, so the 500s it makes are not
+#     retried and do not count for outlier detection, and the injected 2 s
+#     delay is not cut by the 500 ms timeout: it tests the CALLER's
+#     reaction (here, reviews' own 2.5 s / 10 s), not the mesh's;
+#   - Linkerd has no equivalent. Its answer is Chaos Mesh (step 4 onwards)
+#     or a faulty backend like faults/ratings-faulty.yaml — which is what
+#     Chaos Mesh brings to any cluster, meshed or not.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: ratings
+spec:
+  hosts:
+    - ratings
+  http:
+    - fault:
+        abort:
+          percentage:
+            value: 50
+          httpStatus: 500
+        delay:
+          percentage:
+            value: 50
+          fixedDelay: 2s
+      route:
+        - destination:
+            host: ratings
+      timeout: 500ms

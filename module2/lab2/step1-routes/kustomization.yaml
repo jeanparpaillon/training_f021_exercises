@@ -1,0 +1,10 @@
+# Lab 2 starts from the end of lab 1 (lab1/step6-fallback): probes, graceful
+# shutdown, two spread replicas, PDBs. This step adds the first mesh
+# resilience objects: per-route timeouts and retries.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../lab1/step6-fallback
+  - ratings-routes.yaml
+  - reviews-route.yaml

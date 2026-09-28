@@ -1,0 +1,30 @@
+# For the debrief — an experiment as a recurring test, not a one-off.
+#
+# A Schedule creates a new PodChaos from its template on a cron: here, one
+# reviews pod killed every night at 03:00. Keep the last 7 runs to look at
+# (`kubectl get podchaos`), and never start a run while one is going.
+#
+# On its own it only breaks things. It becomes a test when something checks
+# the steady state around it: a k6 run with thresholds (the Job ends Failed
+# when they are crossed), a Prometheus alert, or a Chaos Mesh Workflow that
+# runs the load, the fault and a StatusCheck in sequence.
+#
+# Not applied in the lab. To try it with a shorter cron:
+#   kubectl -n "$NS" apply -f lab2/step7-partition/nightly-schedule.yaml
+#   kubectl -n "$NS" patch schedule nightly-reviews-pod-kill --type merge -p '{"spec":{"schedule":"@every 2m"}}'
+apiVersion: chaos-mesh.org/v1alpha1
+kind: Schedule
+metadata:
+  name: nightly-reviews-pod-kill
+spec:
+  schedule: "0 3 * * *"
+  historyLimit: 7
+  concurrencyPolicy: Forbid
+  type: PodChaos
+  podChaos:
+    action: pod-kill
+    mode: one
+    selector:
+      labelSelectors:
+        app: reviews
+    gracePeriod: 0

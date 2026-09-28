@@ -1,0 +1,31 @@
+# A timeout on the calls to `reviews`, set in productpage's proxy.
+#
+#   timeout.linkerd.io/request: 1s   longer than ratings' 500 ms, so a slow
+#                                    ratings gives reviews time to answer
+#                                    with its fallback instead of being cut
+#                                    off itself. Shorter than productpage's
+#                                    own 3 s, so it fires first.
+#
+# No retry here, on purpose: productpage already retries `reviews` once in
+# its code (the `range(2)` loop, lab 1 step 1). Two attempts x 1 s = 2 s,
+# the page budget. A mesh retry on top would multiply the attempts, not add
+# to them — the step README has you try it.
+#
+# No backendRefs weights this time: this route is about time, not about
+# versions. The v1/v2/v3 split stays whatever the endpoints give.
+apiVersion: policy.linkerd.io/v1beta3
+kind: HTTPRoute
+metadata:
+  name: reviews
+  annotations:
+    timeout.linkerd.io/request: 1s
+spec:
+  parentRefs:
+    - name: reviews
+      kind: Service
+      group: core
+      port: 9080
+  rules:
+    - backendRefs:
+        - name: reviews
+          port: 9080

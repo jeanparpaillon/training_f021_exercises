@@ -1,0 +1,9 @@
+# No new objects in this step: it installs Chaos Mesh, cluster-wide, with
+# Helm. The overlay exists so that `kubectl apply -k` on this directory
+# still lands you in the right state — the end of step 2, since step 3 is a
+# trainer demo on another namespace.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../step2-failure-accrual

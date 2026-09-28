@@ -1,0 +1,13 @@
+# Per-container defaults and bounds. The defaults are what keep Bookinfo's
+# pods admissible once the quota covers CPU and memory: without them, every
+# pod that sets no requests is rejected.
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: tenant
+spec:
+  limits:
+    - type: Container
+      defaultRequest: { cpu: 100m, memory: 128Mi }
+      default:        { cpu: 500m, memory: 512Mi }
+      max:            { cpu: "2",  memory: 4Gi }

@@ -1,0 +1,28 @@
+# Cut `ratings` off from its callers, both ways: packets between the ratings
+# pods and the reviews pods are dropped (iptables, in the ratings pods'
+# network namespace).
+#
+# Unlike the lab 1 black hole, nothing answers at all — not even the TCP
+# handshake — so existing connections go silent and new ones never open.
+# Unlike scaling ratings to 0, the endpoints are still there: Kubernetes
+# and the readiness probes (the kubelet is not partitioned) still say
+# ratings is fine.
+#
+# Removed on its own after 2 min.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: ratings-partition
+spec:
+  action: partition
+  mode: all
+  selector:
+    labelSelectors:
+      app: ratings
+  direction: both
+  target:
+    mode: all
+    selector:
+      labelSelectors:
+        app: reviews
+  duration: 2m

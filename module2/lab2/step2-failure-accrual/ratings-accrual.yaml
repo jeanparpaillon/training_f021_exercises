@@ -1,0 +1,35 @@
+# Failure accrual on the `ratings` Service: every client proxy (reviews v2
+# and v3) keeps a per-endpoint count of consecutive failures, and stops
+# sending to an endpoint that crosses it.
+#
+#   failure-accrual: consecutive          the only policy Linkerd has
+#   ...-consecutive-max-failures: "3"     ejected after 3 failures in a row
+#                                         (default 7 — lowered to see it
+#                                         happen within seconds)
+#   ...-consecutive-min-penalty: 5s       first ejection lasts 5 s (default 1 s)
+#   ...-consecutive-max-penalty: 30s      each failed probe doubles it, up
+#                                         to 30 s (default 1 min)
+#   ...-consecutive-jitter-ratio: "0.5"   (the default) so that many clients
+#                                         do not probe in lockstep
+#
+# When a penalty expires the endpoint is not trusted again at once: it gets
+# ONE request, a real one from a real user. Success puts it back in the
+# pool; failure ejects it again, for twice as long. That is the half-open
+# state of a circuit breaker, per endpoint.
+#
+# It is the CLIENT that decides: the annotation is read by every proxy that
+# calls `ratings`, each keeping its own counts. Nothing runs next to ratings.
+#
+# Also applied by hand in the step README, as a patch, before the retries
+# come back:
+#   kubectl -n "$NS" patch svc ratings --patch-file lab2/step2-failure-accrual/ratings-accrual.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: ratings
+  annotations:
+    balancer.linkerd.io/failure-accrual: consecutive
+    balancer.linkerd.io/failure-accrual-consecutive-max-failures: "3"
+    balancer.linkerd.io/failure-accrual-consecutive-min-penalty: 5s
+    balancer.linkerd.io/failure-accrual-consecutive-max-penalty: 30s
+    balancer.linkerd.io/failure-accrual-consecutive-jitter-ratio: "0.5"

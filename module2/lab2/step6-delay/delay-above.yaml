@@ -1,0 +1,26 @@
+# The same experiment, with the delay ABOVE the 1 s timeout of the `reviews`
+# route. Same name as delay-below.yaml on purpose: delete one before
+# applying the other.
+#
+# Every call to reviews now times out in the mesh (504) — and productpage
+# tries once more in its code before giving up.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: productpage-reviews-delay
+spec:
+  action: delay
+  mode: all
+  selector:
+    labelSelectors:
+      app: productpage
+  direction: to
+  target:
+    mode: all
+    selector:
+      labelSelectors:
+        app: reviews
+  delay:
+    latency: 1500ms
+    correlation: "0"
+  duration: 2m

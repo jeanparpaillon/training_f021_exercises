@@ -1,0 +1,14 @@
+# The tenant's total, checked at admission on the sum of requests.
+# Sized for Bookinfo + the toolbox with a little headroom: Bookinfo sets no
+# requests, so the LimitRange defaults make its 6 pods + toolbox 610m / 784Mi.
+# Scaling reviews-v3 to 6 runs out of memory after 2 replicas — the quota proof.
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: tenant
+spec:
+  hard:
+    requests.cpu: "1"
+    requests.memory: 1Gi
+    pods: "10"
+    services.loadbalancers: "0"

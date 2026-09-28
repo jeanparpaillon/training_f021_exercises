@@ -1,0 +1,30 @@
+# The step 1 HTTPRoutes, in Istio's vocabulary: one object, named fields
+# instead of annotations.
+#
+#   timeout: 500ms                  timeout.linkerd.io/request
+#   retries.attempts: 1             retry.linkerd.io/limit
+#   retries.perTryTimeout: 250ms    retry.linkerd.io/timeout
+#   retries.retryOn: 5xx            retry.linkerd.io/http
+#
+# Istio retries by default (2 attempts, on connect errors and some 503s)
+# even with no VirtualService at all; Linkerd never retries unless told to.
+# Worth knowing before adding a retry at another layer.
+#
+# GET-only retries take a second `http:` entry with a `method` match, as on
+# Linkerd; left out here to keep the side-by-side short.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: ratings
+spec:
+  hosts:
+    - ratings
+  http:
+    - route:
+        - destination:
+            host: ratings
+      timeout: 500ms
+      retries:
+        attempts: 1
+        perTryTimeout: 250ms
+        retryOn: 5xx

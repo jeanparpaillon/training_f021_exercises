@@ -1,0 +1,72 @@
+# Timeouts and retries on the calls to `ratings`, set in the caller's proxy
+# (reviews v2 and v3) — no change to the Java code that hardcodes 10 s.
+#
+# Two routes on the same Service, because retry annotations apply to a whole
+# route and only GET is safe to retry:
+#
+#   ratings-get   GET /ratings/...  timeout 500 ms, 1 retry, 250 ms per try
+#   ratings       everything else   timeout 500 ms, no retry (a POST that
+#                                   rates a book must not be sent twice)
+#
+# Precedence between the two is decided by the match, and PATH COMES FIRST:
+# a longer prefix beats a shorter one before the method is even looked at.
+# A rule without a path counts as less specific than the catch-all's
+# implicit `PathPrefix /`, so `method: GET` alone would lose to it and every
+# GET would silently go unretried. Hence the explicit /ratings prefix.
+#
+# The numbers, against a 2 s page budget (lab 1 step 5):
+#   timeout.linkerd.io/request: 500ms   the whole call, retries included.
+#                                       Fires long before reviews v2's 10 s
+#                                       and v3's 2.5 s: the in-code values
+#                                       become dead code.
+#   retry.linkerd.io/timeout: 250ms     per attempt. Without it a hung
+#                                       attempt eats the whole 500 ms and
+#                                       there is nothing left to retry with.
+#   retry.linkerd.io/limit: "1"         two attempts in all, and both fit
+#                                       in the request timeout.
+#   retry.linkerd.io/http: 5xx          what counts as retryable.
+#
+# The annotations use a count limit. The older ServiceProfile mechanism
+# (`retryBudget`) caps retries as a ratio of the traffic instead; it is not
+# used here.
+apiVersion: policy.linkerd.io/v1beta3
+kind: HTTPRoute
+metadata:
+  name: ratings-get
+  annotations:
+    timeout.linkerd.io/request: 500ms
+    retry.linkerd.io/http: 5xx
+    retry.linkerd.io/limit: "1"
+    retry.linkerd.io/timeout: 250ms
+spec:
+  parentRefs:
+    - name: ratings
+      kind: Service
+      group: core
+      port: 9080
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /ratings
+          method: GET
+      backendRefs:
+        - name: ratings
+          port: 9080
+---
+apiVersion: policy.linkerd.io/v1beta3
+kind: HTTPRoute
+metadata:
+  name: ratings
+  annotations:
+    timeout.linkerd.io/request: 500ms
+spec:
+  parentRefs:
+    - name: ratings
+      kind: Service
+      group: core
+      port: 9080
+  rules:
+    - backendRefs:
+        - name: ratings
+          port: 9080

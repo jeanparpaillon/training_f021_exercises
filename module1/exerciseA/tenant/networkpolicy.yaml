@@ -1,0 +1,21 @@
+# Default-deny ingress, then allow the tenant's own pods to talk to each
+# other. Egress stays open to keep the exercise short; default-deny egress
+# (plus an allow to kube-dns) is the stretch goal.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-same-namespace
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {}

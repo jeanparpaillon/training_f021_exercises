@@ -1,0 +1,40 @@
+# Patches the day-1 `ratings` DestinationRule (which only named subset v1)
+# with a trafficPolicy. Everything in it runs in the CALLER's Envoy, like
+# failure accrual runs in the caller's linkerd-proxy.
+#
+# outlierDetection — Istio's failure accrual:
+#   consecutive5xxErrors: 3   same threshold as step 2
+#   interval: 5s              how often ejections are evaluated. Linkerd
+#                             decides on every response; Envoy sweeps.
+#   baseEjectionTime: 15s     multiplied by the number of times the host has
+#                             been ejected (15 s, 30 s, 45 s...). Linkerd
+#                             doubles, with jitter.
+#   maxEjectionPercent: 50    never eject more than half the endpoints.
+#                             Linkerd has no such cap: with one endpoint
+#                             left, it ejects it and fails fast.
+#
+# connectionPool — the bulkhead, no Linkerd equivalent:
+#   http1MaxPendingRequests   requests queued waiting for a connection
+#   http2MaxRequests          requests in flight to the whole service
+#   maxConnections            TCP connections to the whole service
+# Past these, Envoy answers 503 at once (response flag UO, upstream
+# overflow) instead of piling more work on a dependency that is already
+# slow. The values are low on purpose, so the demo can hit them.
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: ratings
+spec:
+  host: ratings
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 5
+      http:
+        http1MaxPendingRequests: 2
+        http2MaxRequests: 5
+    outlierDetection:
+      consecutive5xxErrors: 3
+      interval: 5s
+      baseEjectionTime: 15s
+      maxEjectionPercent: 50

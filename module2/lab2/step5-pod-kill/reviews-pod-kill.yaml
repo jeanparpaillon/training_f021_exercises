@@ -1,0 +1,25 @@
+# Kill one `reviews` pod, at random among the six (two per version).
+#
+#   action: pod-kill    delete the pod; its Deployment replaces it
+#   mode: one           one pod among those the selector matches. Also:
+#                       all, fixed (N pods), fixed-percent, random-max-percent
+#   gracePeriod: 0      no SIGTERM, no preStop: a crash, not a rollout.
+#                       Lab 1 step 3's graceful shutdown does not apply —
+#                       that is the point.
+#
+# No `selector.namespaces`: Chaos Mesh defaults it to the namespace of this
+# object, so `kubectl -n "$NS" apply -f` keeps the blast radius in yours.
+#
+# pod-kill is instantaneous and has no duration: the object records that it
+# happened. Delete it before applying it again, or nothing happens.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: reviews-pod-kill
+spec:
+  action: pod-kill
+  mode: one
+  selector:
+    labelSelectors:
+      app: reviews
+  gracePeriod: 0

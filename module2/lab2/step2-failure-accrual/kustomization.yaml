@@ -1,0 +1,13 @@
+# Failure accrual on `ratings`, on top of the step 1 routes.
+#
+# The faulty replica that makes it visible is NOT part of the overlay: it is
+# a fault, in ../../faults/ratings-faulty.yaml, applied by hand and removed
+# at the end of the step, like the black hole.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../step1-routes
+
+patches:
+  - path: ratings-accrual.yaml

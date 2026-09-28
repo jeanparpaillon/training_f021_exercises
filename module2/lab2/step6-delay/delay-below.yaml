@@ -1,0 +1,36 @@
+# 300 ms +/- 100 ms on every packet productpage sends to reviews: below the
+# 1 s timeout of the step 1 `reviews` route, so every call still succeeds,
+# only slower.
+#
+#   selector    the pods whose network is changed (productpage)
+#   direction   `to`: productpage's egress, filtered on...
+#   target      ...the IPs of the reviews pods. Other traffic from
+#               productpage (to details, to its own proxy) is untouched.
+#   delay       tc netem in productpage's network namespace, applied by
+#               chaos-daemon on the node. The Linkerd proxy is in the same
+#               namespace: it sees the delay like the application would.
+#   duration    removed on its own after 2 min, even if you forget it.
+#
+# The filter is on IP addresses, resolved when the experiment starts: a
+# reviews pod created afterwards is not delayed.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: productpage-reviews-delay
+spec:
+  action: delay
+  mode: all
+  selector:
+    labelSelectors:
+      app: productpage
+  direction: to
+  target:
+    mode: all
+    selector:
+      labelSelectors:
+        app: reviews
+  delay:
+    latency: 300ms
+    jitter: 100ms
+    correlation: "0"
+  duration: 2m

@@ -1,0 +1,75 @@
+# A `ratings` replica that is up, passes its probes, and answers 500 to every
+# real request: the bad endpoint that failure accrual is for (lab 2 step 2).
+# Same `app: ratings` label, so the `ratings` Service balances over it and
+# the healthy ratings-v1 alike.
+#
+# Readiness cannot catch it: /health answers 200, as a broken database
+# connection or a bad config would leave it. Only the callers see the
+# failures, which is why the mesh has to judge by responses.
+#
+# It can be repaired and broken again without a restart, to watch the
+# endpoint come back:
+#
+#   kubectl -n "$NS" exec deploy/ratings-faulty -c ratings -- touch /tmp/healthy   # repair
+#   kubectl -n "$NS" exec deploy/ratings-faulty -c ratings -- rm /tmp/healthy      # break
+#
+# Healthy, it answers what ratings-v1 answers for any product.
+#
+#   kubectl -n "$NS" apply -f faults/ratings-faulty.yaml
+#   kubectl -n "$NS" delete -f faults/ratings-faulty.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ratings-faulty
+  labels:
+    app: ratings
+    version: faulty
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ratings
+      version: faulty
+  template:
+    metadata:
+      labels:
+        app: ratings
+        version: faulty
+      annotations:
+        linkerd.io/inject: enabled
+    spec:
+      serviceAccountName: bookinfo-ratings
+      containers:
+        - name: ratings
+          image: registry.istio.io/release/examples-bookinfo-ratings-v1:1.20.3
+          imagePullPolicy: IfNotPresent
+          command:
+            - node
+            - -e
+            - |
+              const http = require('http');
+              const fs = require('fs');
+              http.createServer((req, res) => {
+                const send = (code, body) => {
+                  res.writeHead(code, { 'Content-Type': 'application/json' });
+                  res.end(JSON.stringify(body));
+                };
+                if (req.url === '/health') return send(200, { status: 'Ratings is healthy' });
+                const m = req.url.match(/^\/ratings\/(\d+)/);
+                if (!m) return send(404, { error: 'not found' });
+                if (!fs.existsSync('/tmp/healthy')) return send(500, { error: 'faulty replica' });
+                send(200, { id: Number(m[1]), ratings: { Reviewer1: 5, Reviewer2: 4 } });
+              })
+                // Nagle off: an old Node otherwise holds each small response
+                // ~40 ms, and the balancer would avoid this endpoint for being
+                // slow rather than for failing. A real faulty endpoint is
+                // usually fast: failing costs nothing.
+                .on('connection', (s) => s.setNoDelay(true))
+                .listen(9080);
+          ports:
+            - containerPort: 9080
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 9080
+            periodSeconds: 5

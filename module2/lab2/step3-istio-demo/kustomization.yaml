@@ -1,0 +1,22 @@
+# Trainer demo, on the Istio namespace from module 1 (bookinfo-istio) — NOT
+# on an attendee namespace, and not part of the lab 2 chain: step 4 builds
+# on step 2.
+#
+# It starts from the day-1 Istio demo overlay and adds, for `ratings`, what
+# steps 1 and 2 did with Linkerd, plus the knob Linkerd does not have:
+#
+#   ratings-destination-rule.yaml   outlier detection (= failure accrual)
+#                                   and a connection pool (a bulkhead)
+#   ratings-virtualservice.yaml     timeout and retries (= the HTTPRoutes)
+#
+# fault-injection.yaml is applied by hand, on top, and reverted by
+# re-applying this overlay.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../../module1/lab2/step6-istio-demo
+  - ratings-virtualservice.yaml
+
+patches:
+  - path: ratings-destination-rule.yaml

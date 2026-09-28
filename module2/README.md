@@ -249,20 +249,25 @@ Then look at the retries across layers: `productpage` already retries
 cause if the mesh also retries, and remove one of the layers.
 
 ```sh
-linkerd -n "$NS" viz routes deploy/productpage --to svc/reviews -o wide
+lab2/route-stats.sh productpage-v1 reviews     # requests vs attempts, per route
 ```
 
-**Questions:** what is the difference between `EFFECTIVE_SUCCESS` and
-`ACTUAL_SUCCESS`, and why do you want to see both? Add an ingress that also
-retries, three attempts per layer: how many requests reach a `reviews` that
-is already failing?
+`linkerd viz routes` only reads ServiceProfiles; for HTTPRoutes the same
+numbers come from the proxy metrics, which the script sums.
+
+**Questions:** what is the difference between the requests the application
+made and the attempts the proxy sent (`EFFECTIVE_SUCCESS` and
+`ACTUAL_SUCCESS` in `viz routes` terms), and why do you want to see both?
+Add an ingress that also retries, three attempts per layer: how many
+requests reach a `reviews` that is already failing?
 
 #### Step 2 — circuit breaking with failure accrual
 
 Linkerd's circuit breaker ejects one bad **endpoint**, not the whole service.
 To see it, `ratings` needs more than one endpoint and one of them must be bad:
-the step adds a faulty `ratings` replica that answers 500, behind the same
-Service, and enables failure accrual on it:
+`faults/ratings-faulty.yaml` adds a `ratings` replica that passes its probes
+and answers 500, behind the same Service. The step enables failure accrual
+on the Service:
 
 ```yaml
 metadata:
@@ -305,10 +310,16 @@ objects in your own namespace. On kind:
 ```sh
 helm repo add chaos-mesh https://charts.chaos-mesh.org
 helm install chaos-mesh chaos-mesh/chaos-mesh -n chaos-mesh --create-namespace \
+  --version 2.8.4 \
   --set chaosDaemon.runtime=containerd \
-  --set chaosDaemon.socketPath=/run/containerd/containerd.sock
+  --set chaosDaemon.socketPath=/run/containerd/containerd.sock \
+  --set controllerManager.replicaCount=1 \
+  --set dashboard.securityMode=false
 kubectl -n chaos-mesh port-forward svc/chaos-dashboard 2333:2333
 ```
+
+If the controller crash-loops with `too many open files`, raise the host's
+inotify limits (see `lab2/step4-chaos-mesh/`).
 
 Look at the CRDs it installed (`kubectl api-resources | grep chaos-mesh`).
 
@@ -383,7 +394,7 @@ Commit the post-mortem to the team repository next to the fix.
 ## Cleanup
 
 ```sh
-kubectl -n "$NS" delete podchaos,networkchaos,stresschaos,dnschaos --all
+kubectl -n "$NS" delete podchaos,networkchaos,stresschaos,dnschaos,schedule --all
 kubectl -n "$NS" delete job k6
 ```
 

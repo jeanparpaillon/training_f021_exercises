@@ -1,0 +1,19 @@
+# The identity the tenant deploys with (what its CI would use): the built-in
+# "edit" ClusterRole, granted through a RoleBinding — so only in this
+# namespace. Never a ClusterRoleBinding for a tenant.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: deployer
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: deployer-edit
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: edit
+subjects:
+  - kind: ServiceAccount
+    name: deployer
