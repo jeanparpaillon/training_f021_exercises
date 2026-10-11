@@ -9,51 +9,50 @@
 #   sed "s/CHANGEME/$NS/g" lab1/step1-deploy/ingress.yaml.tmpl \
 #     > lab1/step1-deploy/ingress.yaml
 #
-# The cluster has a single public host name, so attendees are told apart by
-# path: https://srv2052563.hstgr.cloud/<ns>/bookinfo/productpage. The
-# middleware (installed by the trainer, see ../../../shared-cluster/) strips
-# /<ns>/bookinfo, and productpage still sees /productpage.
+# Attendees are told apart by host name: bookinfo.<ns>.195.35.2.222.nip.io.
+# nip.io resolves it to the server's public IP, whose nginx passes plain HTTP
+# for *.nip.io on to Traefik: curl from the web console and the browser on
+# your machine both reach it as is. No prefix to strip: productpage sees the
+# paths as they are.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: bookinfo
-  annotations:
-    traefik.ingress.kubernetes.io/router.middlewares: traefik-strip-ns-app@kubernetescrd
 spec:
   ingressClassName: traefik
   rules:
-    - host: srv2052563.hstgr.cloud
+    - host: bookinfo.CHANGEME.195.35.2.222.nip.io
       http:
         paths:
-          - path: /CHANGEME/bookinfo/productpage
+          - path: /productpage
             pathType: Prefix
             backend:
               service:
                 name: productpage
                 port:
                   number: 9080
-          - path: /CHANGEME/bookinfo/static
+          - path: /static
             pathType: Prefix
             backend:
               service:
                 name: productpage
                 port:
                   number: 9080
-          - path: /CHANGEME/bookinfo/login
+          - path: /login
             pathType: Prefix
             backend:
               service:
                 name: productpage
                 port:
                   number: 9080
-          - path: /CHANGEME/bookinfo/logout
+          - path: /logout
             pathType: Prefix
             backend:
               service:
                 name: productpage
                 port:
                   number: 9080
-          - path: /CHANGEME/bookinfo/api/v1/products
+          - path: /api/v1/products
             pathType: Prefix
             backend:
               service:
