@@ -32,10 +32,12 @@ throughout: four services, one of them in three versions. It is reused on day 2
 
 ## Prerequisites
 
-- `kubectl` 1.27+ (kustomize is built in, no separate binary needed)
-- a cluster: local `kind`, `k3s`, or a namespace on the shared cluster
-- an ingress controller for the Ingress in lab 1 step 1 — or use the
-  `port-forward` fallback that step documents. On `kind`, from the repo root:
+- `kubectl` (kustomize is built in, no separate binary needed): 1.36–1.38
+  for the shared cluster, 1.27+ for kind
+- a cluster: a namespace on the [shared cluster](../shared-cluster/), driven
+  from your own `kubectl`, or a local `kind` / `k3s`
+- an ingress controller for the Ingress in lab 1 step 1 — Traefik on the
+  shared cluster, already there. On `kind`, from the repo root:
 
   ```sh
   make create     # kind cluster; kind.yaml maps host ports 80/443 into the node
@@ -46,8 +48,9 @@ throughout: four services, one of them in three versions. It is reused on day 2
 
 ## Pre-pull the images
 
-The room shares one uplink and Bookinfo pulls 6 images before anything
-renders. Do this before the session, not during it:
+Not needed on the shared cluster: its node pulls from the registries
+itself. On kind, the room shares one uplink and Bookinfo pulls 6 images
+before anything renders. Do this before the session, not during it:
 
 ```sh
 make -j4 pull       # everything both labs need

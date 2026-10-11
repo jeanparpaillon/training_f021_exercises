@@ -1,0 +1,58 @@
+# kind variant — see ingress.yaml.tmpl for the shared cluster.
+#
+# One entry point for the whole application: only `productpage` is exposed,
+# the other three services stay cluster-internal. That is the edge pattern
+# from slot 1, with Ingress as the gateway.
+#
+# Render it into ingress.yaml (git-ignored), which the kustomization uses:
+#
+#   sed "s/CHANGEME/$NS/g" lab1/step1-deploy/ingress-kind.yaml.tmpl \
+#     > lab1/step1-deploy/ingress.yaml
+#
+# bookinfo.<ns>.127.0.0.1.nip.io resolves to 127.0.0.1, where kind.yaml maps
+# ports 80/443 into the node and ingress-nginx listens.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bookinfo
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: bookinfo.CHANGEME.127.0.0.1.nip.io
+      http:
+        paths:
+          - path: /productpage
+            pathType: Prefix
+            backend:
+              service:
+                name: productpage
+                port:
+                  number: 9080
+          - path: /static
+            pathType: Prefix
+            backend:
+              service:
+                name: productpage
+                port:
+                  number: 9080
+          - path: /login
+            pathType: Prefix
+            backend:
+              service:
+                name: productpage
+                port:
+                  number: 9080
+          - path: /logout
+            pathType: Prefix
+            backend:
+              service:
+                name: productpage
+                port:
+                  number: 9080
+          - path: /api/v1/products
+            pathType: Prefix
+            backend:
+              service:
+                name: productpage
+                port:
+                  number: 9080

@@ -1,0 +1,28 @@
+# Shared cluster only — applied once by the trainer, not by attendees.
+#
+# There is one public host name with a TLS certificate, srv2052563.hstgr.cloud,
+# so attendees' Ingresses are told apart by path: /<namespace>/<app>/... The
+# applications expect to be served from `/`, and attendees cannot create
+# Traefik Middlewares in their own namespace, so this one strips the first two
+# path segments for everybody:
+#
+#   /jean/bookinfo/productpage  ->  /productpage
+#
+# An attendee's Ingress opts in with the annotation
+#
+#   traefik.ingress.kubernetes.io/router.middlewares: traefik-strip-ns-app@kubernetescrd
+#
+# (`<namespace>-<name>@kubernetescrd`: the Ingress provider refers to a
+# Middleware of the CRD provider by its full name, which works across
+# namespaces without `allowCrossNamespace`).
+#
+#   kubectl apply -f shared-cluster/traefik-strip-prefix.yaml
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: strip-ns-app
+  namespace: traefik
+spec:
+  stripPrefixRegex:
+    regex:
+      - "^/[^/]+/[^/]+"

@@ -21,49 +21,72 @@ the application the rest of the day works on.
 ratings, v2 black stars, v3 red stars. You can therefore see which pod served
 a request just by looking at the page.
 
-## Deploy
+## Generate your Ingress
+
+The kustomization includes `ingress.yaml`, which is **not** in git: every
+attendee needs their own, otherwise 13 Ingresses fight over the same rule.
+Render it once from the template for your cluster — this is the only file in
+the whole course that carries your namespace:
 
 ```sh
 export NS=<your-namespace>
+
+# shared cluster: Traefik, one host name, your namespace in the path
+sed "s/CHANGEME/$NS/g" lab1/step1-deploy/ingress.yaml.tmpl > lab1/step1-deploy/ingress.yaml
+
+# kind: ingress-nginx, a nip.io host name with your namespace in it
+sed "s/CHANGEME/$NS/g" lab1/step1-deploy/ingress-kind.yaml.tmpl > lab1/step1-deploy/ingress.yaml
+```
+
+Every later step and module builds on this one, so they all pick it up.
+
+## Deploy
+
+```sh
 kubectl -n "$NS" apply -k lab1/step1-deploy
 kubectl -n "$NS" rollout status deploy/productpage-v1
 kubectl -n "$NS" get pods
 ```
 
 Six pods: `details-v1`, `ratings-v1`, `reviews-v1/v2/v3`, `productpage-v1`.
+`reviews` is Java and takes a while to start; wait for all six to be `Running`.
 
 ## Reach it
 
 An Ingress is only a routing rule. It needs an ingress controller to act on
-it, and a path from your machine to that controller:
+it, and a path from your machine to that controller.
 
-- **shared cluster**: both are in place
-- **kind**: `make create ingress` from the repo root. `kind.yaml` maps host
-  ports 80/443 into the node, and `ingress` installs ingress-nginx on them.
+**Shared cluster** — both are in place: Traefik, behind
+`https://srv2052563.hstgr.cloud` (see [`../../../shared-cluster/`](../../../shared-cluster/)).
 
 ```sh
-kubectl get ingressclass            # expect: nginx
+kubectl get ingressclass                   # expect: traefik (default)
+kubectl -n "$NS" get ingress bookinfo
+curl -s -o /dev/null -w '%{http_code}\n' "https://srv2052563.hstgr.cloud/$NS/bookinfo/productpage"   # 200
+curl -s "https://srv2052563.hstgr.cloud/$NS/bookinfo/api/v1/products"   # the JSON API, same Ingress
 ```
 
-The Ingress ships with a placeholder host. Open
-[`ingress.yaml`](ingress.yaml) and replace it with your own:
+then open `https://srv2052563.hstgr.cloud/<your-namespace>/bookinfo/productpage`
+in a browser. Look at the Ingress: every path starts with
+`/<your-namespace>/bookinfo`, and the `router.middlewares` annotation points at
+a Traefik middleware that strips that prefix, so `productpage` still receives
+`/productpage`. `/<your-namespace>/` alone is your web console.
 
-```yaml
-    - host: bookinfo.127.0.0.1.nip.io   # was bookinfo.CHANGEME.example
+**kind** — `make create ingress` from the repo root. `kind.yaml` maps host
+ports 80/443 into the node, and `ingress` installs ingress-nginx on them.
+
+```sh
+kubectl get ingressclass                   # expect: nginx
+kubectl -n "$NS" get ingress bookinfo      # ADDRESS filled in
+curl -sI "http://bookinfo.$NS.127.0.0.1.nip.io/productpage"       # HTTP/1.1 200 OK
+curl -s  "http://bookinfo.$NS.127.0.0.1.nip.io/api/v1/products"   # the JSON API
 ```
 
 Any `*.127.0.0.1.nip.io` name resolves to `127.0.0.1`, so no `/etc/hosts`
-editing. On the shared cluster, use the domain the trainer gives you, with
-your namespace in the name so 13 Ingresses don't collide. Then re-apply:
+editing.
 
-```sh
-kubectl -n "$NS" apply -k lab1/step1-deploy
-kubectl -n "$NS" get ingress bookinfo                      # ADDRESS filled in
-curl -sI http://bookinfo.127.0.0.1.nip.io/productpage      # HTTP/1.1 200 OK
-curl -s  http://bookinfo.127.0.0.1.nip.io/api/v1/products  # the JSON API, same Ingress
-```
-
-No ingress controller at all? Skip the Ingress and port-forward instead:
+**No ingress controller at all**, or want to bypass it? Port-forward, from
+your machine, to the Service:
 
 ```sh
 kubectl -n "$NS" port-forward svc/productpage 9080:9080

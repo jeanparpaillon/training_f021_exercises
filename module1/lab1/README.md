@@ -29,8 +29,14 @@ kubectl config set-context --current --namespace="$NS"   # optional, saves typin
 kubectl auth can-i create deployments -n "$NS"
 ```
 
-Images are large-ish and the room shares one uplink. Pre-pull them (see
-[`../Makefile`](../Makefile)):
+On the shared cluster your namespace is your first name, and the trainer
+gives you the kubeconfig: see [`../../shared-cluster/`](../../shared-cluster/).
+Bookinfo is reached through its Traefik at
+`https://srv2052563.hstgr.cloud/<your-namespace>/bookinfo/productpage`, once
+step 1 has generated your Ingress.
+
+On kind only: images are large-ish and the room shares one uplink. Pre-pull
+them (see [`../Makefile`](../Makefile)):
 
 ```sh
 make -C .. -j4 pull-tools pull-bookinfo

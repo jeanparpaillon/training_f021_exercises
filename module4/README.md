@@ -493,7 +493,7 @@ time, and for each one write down the symptom it fixed:
 | File | Allows |
 | --- | --- |
 | `dns.yaml` | egress to `kube-dns` in `kube-system`, UDP and TCP 53 |
-| `ingress-productpage.yaml` | `ingress-nginx` namespace → `productpage` |
+| `ingress-productpage.yaml` | ingress controller → `productpage`: the `traefik` namespace on the shared cluster, `ingress-nginx` on kind |
 | `productpage-out.yaml` | `productpage` → `details`, `reviews` |
 | `reviews-ratings.yaml` | `reviews` → `ratings` |
 | `linkerd.yaml` | proxies → `linkerd` control plane; `linkerd-viz` → proxies (4191); the proxy inbound port 4143 |
