@@ -1,0 +1,790 @@
+apiVersion: v1
+items:
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{},"name":"bookinfo","namespace":"abdelatif"},"spec":{"ingressClassName":"nginx","rules":[{"host":"bookinfo.abdelatif.127.0.0.1.nip.io","http":{"paths":[{"backend":{"service":{"name":"productpage","port":{"number":9080}}},"path":"/productpage","pathType":"Prefix"},{"backend":{"service":{"name":"productpage","port":{"number":9080}}},"path":"/static","pathType":"Prefix"},{"backend":{"service":{"name":"productpage","port":{"number":9080}}},"path":"/login","pathType":"Prefix"},{"backend":{"service":{"name":"productpage","port":{"number":9080}}},"path":"/logout","pathType":"Prefix"},{"backend":{"service":{"name":"productpage","port":{"number":9080}}},"path":"/api/v1/products","pathType":"Prefix"}]}}]}}
+    creationTimestamp: "2026-10-11T11:17:45Z"
+    generation: 6
+    name: bookinfo
+    namespace: abdelatif
+    resourceVersion: "28610"
+    uid: f3a24a88-5f24-4362-abaa-c78b4912ea58
+  spec:
+    ingressClassName: nginx
+    rules:
+    - host: bookinfo.abdelatif.127.0.0.1.nip.io
+      http:
+        paths:
+        - backend:
+            service:
+              name: productpage
+              port:
+                number: 9080
+          path: /productpage
+          pathType: Prefix
+        - backend:
+            service:
+              name: productpage
+              port:
+                number: 9080
+          path: /static
+          pathType: Prefix
+        - backend:
+            service:
+              name: productpage
+              port:
+                number: 9080
+          path: /login
+          pathType: Prefix
+        - backend:
+            service:
+              name: productpage
+              port:
+                number: 9080
+          path: /logout
+          pathType: Prefix
+        - backend:
+            service:
+              name: productpage
+              port:
+                number: 9080
+          path: /api/v1/products
+          pathType: Prefix
+  status:
+    loadBalancer: {}
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{},"name":"todo","namespace":"abdelatif"},"spec":{"ingressClassName":"traefik","rules":[{"host":"todo-app.abdelatif.195.35.2.222.nip.io","http":{"paths":[{"backend":{"service":{"name":"web","port":{"number":80}}},"path":"/","pathType":"Prefix"}]}}]}}
+    creationTimestamp: "2026-10-12T15:06:40Z"
+    generation: 3
+    name: todo
+    namespace: abdelatif
+    resourceVersion: "172897"
+    uid: 435a415e-fb74-4d0a-adfe-ad9bc3ded1eb
+  spec:
+    ingressClassName: traefik
+    rules:
+    - host: todo-app.abdelatif.195.35.2.222.nip.io
+      http:
+        paths:
+        - backend:
+            service:
+              name: web
+              port:
+                number: 80
+          path: /
+          pathType: Prefix
+  status:
+    loadBalancer: {}
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{"traefik.ingress.kubernetes.io/router.middlewares":"traefik-strip-ns-app@kubernetescrd"},"name":"bookinfo","namespace":"ahlem"},"spec":{"ingressClassName":"traefik","rules":[{"host":"srv2052563.hstgr.cloud","http":{"paths":[{"backend":{"service":{"name":"productpage","port":{"number":9080}}},"path":"/ahlem/bookinfo/productpage","pathType":"Prefix"},{"backend":{"service":{"name":"productpage","port":{"number":9080}}},"path":"/ahlem/bookinfo/static","pathType":"Prefix"},{"backend":{"service":{"name":"productpage","port":{"number":9080}}},"path":"/ahlem/bookinfo/login","pathType":"Prefix"},{"backend":{"service":{"name":"productpage","port":{"number":9080}}},"path":"/ahlem/bookinfo/logout","pathType":"Prefix"},{"backend":{"service":{"name":"productpage","port":{"number":9080}}},"path":"/ahlem/bookinfo/api/v1/products","pathType":"Prefix"}]}}]}}
+      traefik.ingress.kubernetes.io/router.middlewares: traefik-strip-ns-app@kubernetescrd
+    creationTimestamp: "2026-10-11T14:42:43Z"
+    generation: 1
+    name: bookinfo
+    namespace: ahlem
+    resourceVersion: "31083"
+    uid: 9a0c95ff-57ec-44e1-84a7-a69d08a1cadb
+  spec:
+    ingressClassName: traefik
+    rules:
+    - host: srv2052563.hstgr.cloud
+      http:
+        paths:
+        - backend:
+            service:
+              name: productpage
+              port:
+                number: 9080
+          path: /ahlem/bookinfo/productpage
+          pathType: Prefix
+        - backend:
+            service:
+              name: productpage
+              port:
+                number: 9080
+          path: /ahlem/bookinfo/static
+          pathType: Prefix
+        - backend:
+            service:
+              name: productpage
+              port:
+                number: 9080
+          path: /ahlem/bookinfo/login
+          pathType: Prefix
+        - backend:
+            service:
+              name: productpage
+              port:
+                number: 9080
+          path: /ahlem/bookinfo/logout
+          pathType: Prefix
+        - backend:
+            service:
+              name: productpage
+              port:
+                number: 9080
+          path: /ahlem/bookinfo/api/v1/products
+          pathType: Prefix
+  status:
+    loadBalancer: {}
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{"traefik.ingress.kubernetes.io/router.middlewares":"consoles-auth-abdelatif@kubernetescrd"},"name":"console-abdelatif","namespace":"consoles"},"spec":{"rules":[{"host":"srv2052563.hstgr.cloud","http":{"paths":[{"backend":{"service":{"name":"console-abdelatif","port":{"number":80}}},"path":"/abdelatif","pathType":"Prefix"}]}}]}}
+      traefik.ingress.kubernetes.io/router.middlewares: consoles-auth-abdelatif@kubernetescrd
+    creationTimestamp: "2026-10-11T09:40:50Z"
+    generation: 1
+    name: console-abdelatif
+    namespace: consoles
+    resourceVersion: "3733"
+    uid: 86501257-b41f-4be0-992c-5bbe9ae9f0fb
+  spec:
+    ingressClassName: traefik
+    rules:
+    - host: srv2052563.hstgr.cloud
+      http:
+        paths:
+        - backend:
+            service:
+              name: console-abdelatif
+              port:
+                number: 80
+          path: /abdelatif
+          pathType: Prefix
+  status:
+    loadBalancer: {}
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{"traefik.ingress.kubernetes.io/router.middlewares":"consoles-auth-ahlem@kubernetescrd"},"name":"console-ahlem","namespace":"consoles"},"spec":{"rules":[{"host":"srv2052563.hstgr.cloud","http":{"paths":[{"backend":{"service":{"name":"console-ahlem","port":{"number":80}}},"path":"/ahlem","pathType":"Prefix"}]}}]}}
+      traefik.ingress.kubernetes.io/router.middlewares: consoles-auth-ahlem@kubernetescrd
+    creationTimestamp: "2026-10-11T09:40:47Z"
+    generation: 1
+    name: console-ahlem
+    namespace: consoles
+    resourceVersion: "3561"
+    uid: 8cf54765-82c6-49f7-8e70-9de24c7bb2e9
+  spec:
+    ingressClassName: traefik
+    rules:
+    - host: srv2052563.hstgr.cloud
+      http:
+        paths:
+        - backend:
+            service:
+              name: console-ahlem
+              port:
+                number: 80
+          path: /ahlem
+          pathType: Prefix
+  status:
+    loadBalancer: {}
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{"traefik.ingress.kubernetes.io/router.middlewares":"consoles-auth-feriel@kubernetescrd"},"name":"console-feriel","namespace":"consoles"},"spec":{"rules":[{"host":"srv2052563.hstgr.cloud","http":{"paths":[{"backend":{"service":{"name":"console-feriel","port":{"number":80}}},"path":"/feriel","pathType":"Prefix"}]}}]}}
+      traefik.ingress.kubernetes.io/router.middlewares: consoles-auth-feriel@kubernetescrd
+    creationTimestamp: "2026-10-11T09:40:49Z"
+    generation: 1
+    name: console-feriel
+    namespace: consoles
+    resourceVersion: "3660"
+    uid: 75a45e36-a275-4c74-a43f-698ba89e0849
+  spec:
+    ingressClassName: traefik
+    rules:
+    - host: srv2052563.hstgr.cloud
+      http:
+        paths:
+        - backend:
+            service:
+              name: console-feriel
+              port:
+                number: 80
+          path: /feriel
+          pathType: Prefix
+  status:
+    loadBalancer: {}
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{"traefik.ingress.kubernetes.io/router.middlewares":"consoles-auth-fouzia@kubernetescrd"},"name":"console-fouzia","namespace":"consoles"},"spec":{"rules":[{"host":"srv2052563.hstgr.cloud","http":{"paths":[{"backend":{"service":{"name":"console-fouzia","port":{"number":80}}},"path":"/fouzia","pathType":"Prefix"}]}}]}}
+      traefik.ingress.kubernetes.io/router.middlewares: consoles-auth-fouzia@kubernetescrd
+    creationTimestamp: "2026-10-11T09:40:48Z"
+    generation: 1
+    name: console-fouzia
+    namespace: consoles
+    resourceVersion: "3592"
+    uid: d61a745b-6bd4-40d8-b3ff-abeb4d265895
+  spec:
+    ingressClassName: traefik
+    rules:
+    - host: srv2052563.hstgr.cloud
+      http:
+        paths:
+        - backend:
+            service:
+              name: console-fouzia
+              port:
+                number: 80
+          path: /fouzia
+          pathType: Prefix
+  status:
+    loadBalancer: {}
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{"traefik.ingress.kubernetes.io/router.middlewares":"consoles-auth-imad@kubernetescrd"},"name":"console-imad","namespace":"consoles"},"spec":{"rules":[{"host":"srv2052563.hstgr.cloud","http":{"paths":[{"backend":{"service":{"name":"console-imad","port":{"number":80}}},"path":"/imad","pathType":"Prefix"}]}}]}}
+      traefik.ingress.kubernetes.io/router.middlewares: consoles-auth-imad@kubernetescrd
+    creationTimestamp: "2026-10-11T09:40:50Z"
+    generation: 1
+    name: console-imad
+    namespace: consoles
+    resourceVersion: "3701"
+    uid: dd968e31-d390-4b66-b64d-5c25dde04d24
+  spec:
+    ingressClassName: traefik
+    rules:
+    - host: srv2052563.hstgr.cloud
+      http:
+        paths:
+        - backend:
+            service:
+              name: console-imad
+              port:
+                number: 80
+          path: /imad
+          pathType: Prefix
+  status:
+    loadBalancer: {}
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{"traefik.ingress.kubernetes.io/router.middlewares":"consoles-auth-jean@kubernetescrd"},"name":"console-jean","namespace":"consoles"},"spec":{"rules":[{"host":"srv2052563.hstgr.cloud","http":{"paths":[{"backend":{"service":{"name":"console-jean","port":{"number":80}}},"path":"/jean","pathType":"Prefix"}]}}]}}
+      traefik.ingress.kubernetes.io/router.middlewares: consoles-auth-jean@kubernetescrd
+    creationTimestamp: "2026-10-11T09:48:02Z"
+    generation: 1
+    name: console-jean
+    namespace: consoles
+    resourceVersion: "4629"
+    uid: d0a6f387-0ac7-4fc0-9f3e-70ad14283005
+  spec:
+    ingressClassName: traefik
+    rules:
+    - host: srv2052563.hstgr.cloud
+      http:
+        paths:
+        - backend:
+            service:
+              name: console-jean
+              port:
+                number: 80
+          path: /jean
+          pathType: Prefix
+  status:
+    loadBalancer: {}
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{"traefik.ingress.kubernetes.io/router.middlewares":"consoles-auth-milissa@kubernetescrd"},"name":"console-milissa","namespace":"consoles"},"spec":{"rules":[{"host":"srv2052563.hstgr.cloud","http":{"paths":[{"backend":{"service":{"name":"console-milissa","port":{"number":80}}},"path":"/milissa","pathType":"Prefix"}]}}]}}
+      traefik.ingress.kubernetes.io/router.middlewares: consoles-auth-milissa@kubernetescrd
+    creationTimestamp: "2026-10-11T09:40:48Z"
+    generation: 1
+    name: console-milissa
+    namespace: consoles
+    resourceVersion: "3628"
+    uid: c375606f-6fbf-4cfc-9af8-6670a5048928
+  spec:
+    ingressClassName: traefik
+    rules:
+    - host: srv2052563.hstgr.cloud
+      http:
+        paths:
+        - backend:
+            service:
+              name: console-milissa
+              port:
+                number: 80
+          path: /milissa
+          pathType: Prefix
+  status:
+    loadBalancer: {}
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{"traefik.ingress.kubernetes.io/router.middlewares":"consoles-auth-yahia@kubernetescrd"},"name":"console-yahia","namespace":"consoles"},"spec":{"rules":[{"host":"srv2052563.hstgr.cloud","http":{"paths":[{"backend":{"service":{"name":"console-yahia","port":{"number":80}}},"path":"/yahia","pathType":"Prefix"}]}}]}}
+      traefik.ingress.kubernetes.io/router.middlewares: consoles-auth-yahia@kubernetescrd
+    creationTimestamp: "2026-10-11T09:40:51Z"
+    generation: 1
+    name: console-yahia
+    namespace: consoles
+    resourceVersion: "3771"
+    uid: f0741eaf-6e0b-4e4d-affa-fdd066e132f3
+  spec:
+    ingressClassName: traefik
+    rules:
+    - host: srv2052563.hstgr.cloud
+      http:
+        paths:
+        - backend:
+            service:
+              name: console-yahia
+              port:
+                number: 80
+          path: /yahia
+          pathType: Prefix
+  status:
+    loadBalancer: {}
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    creationTimestamp: "2026-10-11T09:08:05Z"
+    generation: 1
+    name: hello
+    namespace: default
+    resourceVersion: "701"
+    uid: c3d11d09-ccec-4e88-a9bf-e61cf1f4e409
+  spec:
+    ingressClassName: traefik
+    rules:
+    - host: srv2052563.hstgr.cloud
+      http:
+        paths:
+        - backend:
+            service:
+              name: hello
+              port:
+                number: 80
+          path: /
+          pathType: Prefix
+  status:
+    loadBalancer: {}
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{},"name":"bookinfo","namespace":"feriel"},"spec":{"ingressClassName":"nginx","rules":[{"host":"bookinfo.feriel.127.0.0.1.nip.io","http":{"paths":[{"backend":{"service":{"name":"productpage","port":{"number":9080}}},"path":"/productpage","pathType":"Prefix"},{"backend":{"service":{"name":"productpage","port":{"number":9080}}},"path":"/static","pathType":"Prefix"},{"backend":{"service":{"name":"productpage","port":{"number":9080}}},"path":"/login","pathType":"Prefix"},{"backend":{"service":{"name":"productpage","port":{"number":9080}}},"path":"/logout","pathType":"Prefix"},{"backend":{"service":{"name":"productpage","port":{"number":9080}}},"path":"/api/v1/products","pathType":"Prefix"}]}}]}}
+    creationTimestamp: "2026-10-11T14:34:15Z"
+    generation: 1
+    name: bookinfo
+    namespace: feriel
+    resourceVersion: "30305"
+    uid: 42b1ae58-df0e-4566-901d-faaa91f37ad2
+  spec:
+    ingressClassName: nginx
+    rules:
+    - host: bookinfo.feriel.127.0.0.1.nip.io
+      http:
+        paths:
+        - backend:
+            service:
+              name: productpage
+              port:
+                number: 9080
+          path: /productpage
+          pathType: Prefix
+        - backend:
+            service:
+              name: productpage
+              port:
+                number: 9080
+          path: /static
+          pathType: Prefix
+        - backend:
+            service:
+              name: productpage
+              port:
+                number: 9080
+          path: /login
+          pathType: Prefix
+        - backend:
+            service:
+              name: productpage
+              port:
+                number: 9080
+          path: /logout
+          pathType: Prefix
+        - backend:
+            service:
+              name: productpage
+              port:
+                number: 9080
+          path: /api/v1/products
+          pathType: Prefix
+  status:
+    loadBalancer: {}
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{},"name":"bookinfo","namespace":"fouzia"},"spec":{"ingressClassName":"nginx","rules":[{"host":"bookinfo.fouzia.127.0.0.1.nip.io","http":{"paths":[{"backend":{"service":{"name":"productpage","port":{"number":9080}}},"path":"/productpage","pathType":"Prefix"},{"backend":{"service":{"name":"productpage","port":{"number":9080}}},"path":"/static","pathType":"Prefix"},{"backend":{"service":{"name":"productpage","port":{"number":9080}}},"path":"/login","pathType":"Prefix"},{"backend":{"service":{"name":"productpage","port":{"number":9080}}},"path":"/logout","pathType":"Prefix"},{"backend":{"service":{"name":"productpage","port":{"number":9080}}},"path":"/api/v1/products","pathType":"Prefix"}]}}]}}
+    creationTimestamp: "2026-10-11T14:15:06Z"
+    generation: 2
+    name: bookinfo
+    namespace: fouzia
+    resourceVersion: "30020"
+    uid: a83a7671-bfb0-419e-86be-062e02a71ded
+  spec:
+    ingressClassName: nginx
+    rules:
+    - host: bookinfo.fouzia.127.0.0.1.nip.io
+      http:
+        paths:
+        - backend:
+            service:
+              name: productpage
+              port:
+                number: 9080
+          path: /productpage
+          pathType: Prefix
+        - backend:
+            service:
+              name: productpage
+              port:
+                number: 9080
+          path: /static
+          pathType: Prefix
+        - backend:
+            service:
+              name: productpage
+              port:
+                number: 9080
+          path: /login
+          pathType: Prefix
+        - backend:
+            service:
+              name: productpage
+              port:
+                number: 9080
+          path: /logout
+          pathType: Prefix
+        - backend:
+            service:
+              name: productpage
+              port:
+                number: 9080
+          path: /api/v1/products
+          pathType: Prefix
+  status:
+    loadBalancer: {}
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{"traefik.ingress.kubernetes.io/router.middlewares":"headlamp-auth@kubernetescrd"},"name":"headlamp","namespace":"headlamp"},"spec":{"ingressClassName":"traefik","rules":[{"host":"srv2052563.hstgr.cloud","http":{"paths":[{"backend":{"service":{"name":"headlamp","port":{"number":80}}},"path":"/headlamp","pathType":"Prefix"}]}}]}}
+    creationTimestamp: "2026-10-12T08:03:54Z"
+    generation: 1
+    name: headlamp
+    namespace: headlamp
+    resourceVersion: "123047"
+    uid: 32b3db6b-1045-407d-8aec-21f5c070336c
+  spec:
+    ingressClassName: traefik
+    rules:
+    - host: srv2052563.hstgr.cloud
+      http:
+        paths:
+        - backend:
+            service:
+              name: headlamp
+              port:
+                number: 80
+          path: /headlamp
+          pathType: Prefix
+  status:
+    loadBalancer: {}
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{},"name":"bookinfo","namespace":"jean"},"spec":{"ingressClassName":"traefik","rules":[{"host":"bookinfo.jean.195.35.2.222.nip.io","http":{"paths":[{"backend":{"service":{"name":"productpage","port":{"number":9080}}},"path":"/productpage","pathType":"Prefix"},{"backend":{"service":{"name":"productpage","port":{"number":9080}}},"path":"/static","pathType":"Prefix"},{"backend":{"service":{"name":"productpage","port":{"number":9080}}},"path":"/login","pathType":"Prefix"},{"backend":{"service":{"name":"productpage","port":{"number":9080}}},"path":"/logout","pathType":"Prefix"},{"backend":{"service":{"name":"productpage","port":{"number":9080}}},"path":"/api/v1/products","pathType":"Prefix"}]}}]}}
+    creationTimestamp: "2026-10-11T10:17:58Z"
+    generation: 5
+    name: bookinfo
+    namespace: jean
+    resourceVersion: "32692"
+    uid: f9a92767-1c7d-41ca-9b1c-779b97cf99d5
+  spec:
+    ingressClassName: traefik
+    rules:
+    - host: bookinfo.jean.195.35.2.222.nip.io
+      http:
+        paths:
+        - backend:
+            service:
+              name: productpage
+              port:
+                number: 9080
+          path: /productpage
+          pathType: Prefix
+        - backend:
+            service:
+              name: productpage
+              port:
+                number: 9080
+          path: /static
+          pathType: Prefix
+        - backend:
+            service:
+              name: productpage
+              port:
+                number: 9080
+          path: /login
+          pathType: Prefix
+        - backend:
+            service:
+              name: productpage
+              port:
+                number: 9080
+          path: /logout
+          pathType: Prefix
+        - backend:
+            service:
+              name: productpage
+              port:
+                number: 9080
+          path: /api/v1/products
+          pathType: Prefix
+  status:
+    loadBalancer: {}
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{"traefik.ingress.kubernetes.io/router.middlewares":"traefik-strip-ns-app@kubernetescrd"},"name":"bookinfo","namespace":"milissa"},"spec":{"ingressClassName":"traefik","rules":[{"host":"srv2052563.hstgr.cloud","http":{"paths":[{"backend":{"service":{"name":"productpage","port":{"number":9080}}},"path":"/milissa/bookinfo/productpage","pathType":"Prefix"},{"backend":{"service":{"name":"productpage","port":{"number":9080}}},"path":"/milissa/bookinfo/static","pathType":"Prefix"},{"backend":{"service":{"name":"productpage","port":{"number":9080}}},"path":"/milissa/bookinfo/login","pathType":"Prefix"},{"backend":{"service":{"name":"productpage","port":{"number":9080}}},"path":"/milissa/bookinfo/logout","pathType":"Prefix"},{"backend":{"service":{"name":"productpage","port":{"number":9080}}},"path":"/milissa/bookinfo/api/v1/products","pathType":"Prefix"}]}}]}}
+      traefik.ingress.kubernetes.io/router.middlewares: traefik-strip-ns-app@kubernetescrd
+    creationTimestamp: "2026-10-11T14:28:26Z"
+    generation: 1
+    name: bookinfo
+    namespace: milissa
+    resourceVersion: "29577"
+    uid: e09b0d7e-7a60-445c-a2a9-337c1953f607
+  spec:
+    ingressClassName: traefik
+    rules:
+    - host: srv2052563.hstgr.cloud
+      http:
+        paths:
+        - backend:
+            service:
+              name: productpage
+              port:
+                number: 9080
+          path: /milissa/bookinfo/productpage
+          pathType: Prefix
+        - backend:
+            service:
+              name: productpage
+              port:
+                number: 9080
+          path: /milissa/bookinfo/static
+          pathType: Prefix
+        - backend:
+            service:
+              name: productpage
+              port:
+                number: 9080
+          path: /milissa/bookinfo/login
+          pathType: Prefix
+        - backend:
+            service:
+              name: productpage
+              port:
+                number: 9080
+          path: /milissa/bookinfo/logout
+          pathType: Prefix
+        - backend:
+            service:
+              name: productpage
+              port:
+                number: 9080
+          path: /milissa/bookinfo/api/v1/products
+          pathType: Prefix
+  status:
+    loadBalancer: {}
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{},"name":"registry","namespace":"registry"},"spec":{"ingressClassName":"traefik","rules":[{"host":"registry.srv2052563.hstgr.cloud","http":{"paths":[{"backend":{"service":{"name":"registry","port":{"name":"http"}}},"path":"/","pathType":"Prefix"}]}}]}}
+    creationTimestamp: "2026-10-12T11:07:49Z"
+    generation: 1
+    name: registry
+    namespace: registry
+    resourceVersion: "134490"
+    uid: d2784fdd-3745-4aaf-8bc2-6dee9c7bee49
+  spec:
+    ingressClassName: traefik
+    rules:
+    - host: registry.srv2052563.hstgr.cloud
+      http:
+        paths:
+        - backend:
+            service:
+              name: registry
+              port:
+                name: http
+          path: /
+          pathType: Prefix
+  status:
+    loadBalancer: {}
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      meta.helm.sh/release-name: rocketchat
+      meta.helm.sh/release-namespace: rocketchat
+    creationTimestamp: "2026-10-12T09:30:28Z"
+    generation: 1
+    labels:
+      app.kubernetes.io/instance: rocketchat
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: rocketchat
+      helm.sh/chart: rocketchat-7.0.2
+    name: rocketchat-rocketchat
+    namespace: rocketchat
+    resourceVersion: "126255"
+    uid: 4c230255-da28-4ef3-bd1b-179a1c4d7cf2
+  spec:
+    ingressClassName: traefik
+    rules:
+    - host: chat.srv2052563.hstgr.cloud
+      http:
+        paths:
+        - backend:
+            service:
+              name: rocketchat-rocketchat
+              port:
+                name: http
+          path: /
+          pathType: Prefix
+  status:
+    loadBalancer: {}
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{},"name":"blog-ingress","namespace":"yahia"},"spec":{"ingressClassName":"traefik","rules":[{"host":"blog.yahia.195.35.2.222.nip.io","http":{"paths":[{"backend":{"service":{"name":"web","port":{"number":3000}}},"path":"/","pathType":"Prefix"}]}},{"host":"admin.yahia.195.35.2.222.nip.io","http":{"paths":[{"backend":{"service":{"name":"admin","port":{"number":80}}},"path":"/","pathType":"Prefix"}]}}]}}
+    creationTimestamp: "2026-10-12T14:22:11Z"
+    generation: 2
+    name: blog-ingress
+    namespace: yahia
+    resourceVersion: "157473"
+    uid: 3d7d6ccf-302c-4982-bfd6-f50069f2163c
+  spec:
+    ingressClassName: traefik
+    rules:
+    - host: blog.yahia.195.35.2.222.nip.io
+      http:
+        paths:
+        - backend:
+            service:
+              name: web
+              port:
+                number: 3000
+          path: /
+          pathType: Prefix
+    - host: admin.yahia.195.35.2.222.nip.io
+      http:
+        paths:
+        - backend:
+            service:
+              name: admin
+              port:
+                number: 80
+          path: /
+          pathType: Prefix
+  status:
+    loadBalancer: {}
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{},"name":"bookinfo","namespace":"yahia"},"spec":{"ingressClassName":"nginx","rules":[{"host":"bookinfo.yahia.127.0.0.1.nip.io","http":{"paths":[{"backend":{"service":{"name":"productpage","port":{"number":9080}}},"path":"/productpage","pathType":"Prefix"},{"backend":{"service":{"name":"productpage","port":{"number":9080}}},"path":"/static","pathType":"Prefix"},{"backend":{"service":{"name":"productpage","port":{"number":9080}}},"path":"/login","pathType":"Prefix"},{"backend":{"service":{"name":"productpage","port":{"number":9080}}},"path":"/logout","pathType":"Prefix"},{"backend":{"service":{"name":"productpage","port":{"number":9080}}},"path":"/api/v1/products","pathType":"Prefix"}]}}]}}
+    creationTimestamp: "2026-10-11T11:17:40Z"
+    generation: 2
+    name: bookinfo
+    namespace: yahia
+    resourceVersion: "28960"
+    uid: b06b380b-d722-4973-be18-f8a250b0d18b
+  spec:
+    ingressClassName: nginx
+    rules:
+    - host: bookinfo.yahia.127.0.0.1.nip.io
+      http:
+        paths:
+        - backend:
+            service:
+              name: productpage
+              port:
+                number: 9080
+          path: /productpage
+          pathType: Prefix
+        - backend:
+            service:
+              name: productpage
+              port:
+                number: 9080
+          path: /static
+          pathType: Prefix
+        - backend:
+            service:
+              name: productpage
+              port:
+                number: 9080
+          path: /login
+          pathType: Prefix
+        - backend:
+            service:
+              name: productpage
+              port:
+                number: 9080
+          path: /logout
+          pathType: Prefix
+        - backend:
+            service:
+              name: productpage
+              port:
+                number: 9080
+          path: /api/v1/products
+          pathType: Prefix
+  status:
+    loadBalancer: {}
+kind: List
+metadata:
+  resourceVersion: ""

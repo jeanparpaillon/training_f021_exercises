@@ -1,0 +1,70 @@
+# Shared cluster only — Helm values of the `traefik` release, applied by the
+# trainer on the server. This file is the whole set: it replaces the values
+# the release was installed with, so do not pass --reuse-values.
+#
+#   scp shared-cluster/traefik-values.yaml root@srv2052563.hstgr.cloud:/root/
+#   ssh root@srv2052563.hstgr.cloud \
+#     helm upgrade traefik traefik/traefik -n traefik --version 41.7.1 -f /root/traefik-values.yaml
+#
+# Traefik is the only HTTP layer on the server: it terminates TLS and gets the
+# Let's Encrypt certificates itself. Nothing runs in front of it; the docker
+# port mapping of the kind node sends 0.0.0.0:80/443 straight to the NodePorts
+# 30080/30443 below.
+ingressClass:
+  isDefaultClass: true
+
+service:
+  type: NodePort
+  spec:
+    type: NodePort
+    # Docker's DNAT keeps the client address up to the node; with the default
+    # `Cluster` policy kube-proxy would then SNAT it away. Single node, so
+    # `Local` costs nothing.
+    externalTrafficPolicy: Local
+
+providers:
+  kubernetesIngress:
+    publishedService:
+      enabled: false
+
+ports:
+  web:
+    nodePort: 30080
+    # Routers that name no entrypoint attach to `web` only. The attendees'
+    # *.nip.io Ingresses therefore stay HTTP-only, and Traefik never asks
+    # Let's Encrypt for a nip.io name (the domain is shared by the whole
+    # internet, so its rate limit is always exhausted).
+    asDefault: true
+    # Only pods may set X-Forwarded-*; everything else reaches Traefik with
+    # its own address as the peer.
+    forwardedHeaders:
+      trustedIPs: ["10.244.0.0/16"]
+  websecure:
+    nodePort: 30443
+    http:
+      tls:
+        enabled: true
+        # Every router on websecure gets a certificate from `le` for its Host().
+        # Only Ingresses that opt in with router.entrypoints=websecure are on it.
+        certResolver: le
+    transport:
+      respondingTimeouts:
+        # Traefik v3 defaults to 60s, which cuts large image pushes to the
+        # registry (the former nginx front had proxy_read_timeout 900s there).
+        readTimeout: 0
+
+certificatesResolvers:
+  le:
+    acme:
+      email: jean.parpaillon@gmail.com
+      storage: /data/acme.json
+      httpChallenge:
+        entryPoint: web
+
+# acme.json must survive pod restarts, or every restart re-orders all the
+# certificates. File storage also limits Traefik to one replica: fine on a
+# single-node cluster.
+persistence:
+  enabled: true
+  storageClass: standard
+  size: 128Mi

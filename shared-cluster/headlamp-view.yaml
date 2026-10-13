@@ -1,0 +1,86 @@
+# Shared cluster only — applied once by the trainer, not by attendees.
+#
+# Attendees log in to Headlamp (https://srv2052563.hstgr.cloud/headlamp/) with
+# the token of the `headlamp` ServiceAccount of their namespace, which is
+# `admin` there and nothing else. This lets them *read* the whole cluster from
+# Headlamp: every namespace (the other attendees', kube-system, traefik…) and
+# the cluster-scoped objects Headlamp's overview needs.
+#
+# Read only, and no Secrets: the built-in `view` role leaves them out, so the
+# other attendees' tokens and the trainer's stay hidden. Write access is still
+# limited to their own namespace by the existing `headlamp-admin` RoleBinding.
+#
+# Only the Headlamp ServiceAccounts are bound, not the attendees' kubectl users
+# nor their console ServiceAccounts. A new attendee needs a subject added below.
+#
+#   kubectl apply -f shared-cluster/headlamp-view.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: trainee-cluster-read
+rules:
+  # Cluster-scoped objects, which `view` does not cover.
+  - apiGroups: [""]
+    resources: [nodes, namespaces, persistentvolumes]
+    verbs: [get, list, watch]
+  - apiGroups: [storage.k8s.io]
+    resources: [storageclasses, csidrivers, csinodes, volumeattachments]
+    verbs: [get, list, watch]
+  - apiGroups: [networking.k8s.io]
+    resources: [ingressclasses]
+    verbs: [get, list, watch]
+  - apiGroups: [scheduling.k8s.io]
+    resources: [priorityclasses]
+    verbs: [get, list, watch]
+  - apiGroups: [node.k8s.io]
+    resources: [runtimeclasses]
+    verbs: [get, list, watch]
+  - apiGroups: [apiextensions.k8s.io]
+    resources: [customresourcedefinitions]
+    verbs: [get, list, watch]
+  - apiGroups: [rbac.authorization.k8s.io]
+    resources: [clusterroles, clusterrolebindings, roles, rolebindings]
+    verbs: [get, list, watch]
+  - apiGroups: [admissionregistration.k8s.io]
+    resources: [mutatingwebhookconfigurations, validatingwebhookconfigurations]
+    verbs: [get, list, watch]
+  - apiGroups: [metrics.k8s.io]
+    resources: [nodes, pods]
+    verbs: [get, list]
+---
+# Namespaced objects in every namespace, Secrets excepted.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: trainees-headlamp-view
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+  - { kind: ServiceAccount, name: headlamp, namespace: abdelatif }
+  - { kind: ServiceAccount, name: headlamp, namespace: ahlem }
+  - { kind: ServiceAccount, name: headlamp, namespace: feriel }
+  - { kind: ServiceAccount, name: headlamp, namespace: fouzia }
+  - { kind: ServiceAccount, name: headlamp, namespace: imad }
+  - { kind: ServiceAccount, name: headlamp, namespace: jean }
+  - { kind: ServiceAccount, name: headlamp, namespace: milissa }
+  - { kind: ServiceAccount, name: headlamp, namespace: yahia }
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: trainees-headlamp-cluster-read
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: trainee-cluster-read
+subjects:
+  - { kind: ServiceAccount, name: headlamp, namespace: abdelatif }
+  - { kind: ServiceAccount, name: headlamp, namespace: ahlem }
+  - { kind: ServiceAccount, name: headlamp, namespace: feriel }
+  - { kind: ServiceAccount, name: headlamp, namespace: fouzia }
+  - { kind: ServiceAccount, name: headlamp, namespace: imad }
+  - { kind: ServiceAccount, name: headlamp, namespace: jean }
+  - { kind: ServiceAccount, name: headlamp, namespace: milissa }
+  - { kind: ServiceAccount, name: headlamp, namespace: yahia }

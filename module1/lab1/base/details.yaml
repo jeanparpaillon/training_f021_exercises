@@ -8,9 +8,11 @@ metadata:
     app: details
     service: details
 spec:
+  type: NodePort
   ports:
     - port: 9080
       name: http
+      nodePort: 30081
   selector:
     app: details
 ---

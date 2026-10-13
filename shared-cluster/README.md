@@ -8,7 +8,8 @@ beyond that.
 | --- | --- |
 | API server | `https://srv2052563.hstgr.cloud:6443` |
 | Kubernetes | 1.37 |
-| Public URL | `https://srv2052563.hstgr.cloud/` (valid Let's Encrypt certificate) |
+| Public URL | `https://srv2052563.hstgr.cloud/` (valid Let's Encrypt certificate): web consoles |
+| Lab applications | `http://<app>.<namespace>.195.35.2.222.nip.io/` (plain HTTP) |
 | Ingress controller | Traefik, IngressClass `traefik` (the default one) |
 | Storage | `local-path` (`StorageClass` `standard`) |
 | Your namespace | your first name, lower case — you are `admin` in it, and only in it |
@@ -34,30 +35,26 @@ as on kind.
 
 ## Reaching your services
 
-There is **one** host name with a certificate, so Ingresses are told apart by
-path, not by host:
+Each Ingress gets its own host name, with your namespace in it:
 
 ```
-https://srv2052563.hstgr.cloud/<namespace>/<app>/<path>
+http://<app>.<namespace>.195.35.2.222.nip.io/<path>
 ```
 
-e.g. `https://srv2052563.hstgr.cloud/jean/bookinfo/productpage`. Traefik
-strips `/<namespace>/<app>` before passing the request on, so the
-application still sees `/productpage`. You only need two things in your
-Ingress:
+e.g. `http://bookinfo.jean.195.35.2.222.nip.io/productpage`. nip.io is
+wildcard DNS: `<anything>.195.35.2.222.nip.io` resolves to `195.35.2.222`,
+the server, where Traefik picks your Ingress by host name. The same URL works
+with `curl` from your web console and in the browser on your machine. Your
+Ingress only needs:
 
 ```yaml
-metadata:
-  annotations:
-    # strips /<namespace>/<app>; provided by the trainer, shared by everybody
-    traefik.ingress.kubernetes.io/router.middlewares: traefik-strip-ns-app@kubernetescrd
 spec:
   ingressClassName: traefik
   rules:
-    - host: srv2052563.hstgr.cloud
+    - host: <app>.<namespace>.195.35.2.222.nip.io
       http:
         paths:
-          - path: /<namespace>/<app>/...
+          - path: /...
 ```
 
 Lab 1 step 1 generates this Ingress for Bookinfo; see
@@ -65,15 +62,17 @@ Lab 1 step 1 generates this Ingress for Bookinfo; see
 
 Things to know:
 
-- **Always put your namespace first in the path.** `/<namespace>/` itself is
-  your web console; anything longer wins over it in Traefik, so
-  `/<namespace>/bookinfo/...` and the console coexist.
-- **The application must use relative links** to work under a prefix. Bookinfo
-  mostly does: styles, login and logout work. Its logo
-  (`/static/img/izzy.png`) and the links of its `/` index page are absolute,
-  so the logo is missing in the browser and you start from `/productpage`.
-- Other subdomains of `srv2052563.hstgr.cloud` do resolve to the cluster, but
-  the certificate does not cover them: `curl -k` only.
+- **Always put your namespace in the host name.** Two Ingresses with the
+  same host and path fight over the same rule.
+- **HTTP only.** Only the trainer's host names (`srv2052563.hstgr.cloud`,
+  `chat.`, `registry.`) get a certificate; `*.nip.io` names are served on
+  port 80 alone.
+- **Not `127.0.0.1.nip.io`** as on kind: from your machine that is your
+  machine, and from the web console it is the console pod itself.
+- `https://srv2052563.hstgr.cloud/<namespace>/` is your web console. Path
+  prefixes under that host are still possible with the `strip-ns-app`
+  middleware (see [`traefik-strip-prefix.yaml`](traefik-strip-prefix.yaml)),
+  but the application must then use relative links; prefer a host name.
 - No Ingress, or something that is not HTTP? `kubectl -n "$NS" port-forward
   svc/<name> <port>` always works from your machine.
 
@@ -84,16 +83,218 @@ and a console. Then, once for the room:
 
 ```sh
 kubectl apply -f shared-cluster/traefik-strip-prefix.yaml
+kubectl apply -f shared-cluster/headlamp-view.yaml
 ```
+
+[`headlamp-view.yaml`](headlamp-view.yaml) lets attendees read the whole
+cluster in Headlamp (every namespace, nodes, CRDs…, never Secrets) with the
+`headlamp` ServiceAccount token of their namespace; writes stay limited to
+their own namespace. A new attendee needs a subject added there.
+
+Edge setup (Traefik, TLS, port mapping) is described in
+[Trainer — the edge](#trainer--the-edge) below.
 
 Check it end to end with your own namespace:
 
 ```sh
 NS=<trainer-namespace>
+sed "s/CHANGEME/$NS/g" module1/lab1/step1-deploy/ingress.yaml.tmpl \
+  > module1/lab1/step1-deploy/ingress.yaml
 kubectl -n "$NS" apply -k module1/lab1/step1-deploy
 curl -s -o /dev/null -w '%{http_code}\n' \
-  "https://srv2052563.hstgr.cloud/$NS/bookinfo/productpage"     # 200
+  "http://bookinfo.$NS.195.35.2.222.nip.io/productpage"         # 200
 ```
+
+## Trainer — the edge
+
+Traefik is the only HTTP layer on the server: it terminates TLS, gets the
+Let's Encrypt certificates (ACME HTTP-01) and routes on the Host header.
+Nothing runs in front of it. The kind node's docker port mapping is the whole
+"edge":
+
+```
+client ─► 195.35.2.222:80/443        docker DNAT on the host (port mapping of the kind node)
+        ─► 172.18.0.2:30080/30443    NodePort of Service traefik (kube-proxy DNAT, policy Local)
+        ─► Traefik pod :8000/:8443   TLS + routing                traefik-values.yaml
+        ─► backend pod IP            straight from the EndpointSlices, no ClusterIP
+```
+
+No proxy, so Traefik sees the real client address (`externalTrafficPolicy:
+Local` stops kube-proxy from SNATing it away).
+
+| File | What it is |
+| --- | --- |
+| [`traefik-values.yaml`](traefik-values.yaml) | the full Helm values of the `traefik` release: ACME resolver `le`, `web` as default entrypoint, `acme.json` on a PVC |
+| [`traefik-https.yaml`](traefik-https.yaml) | HTTP→HTTPS redirect for the hosts that have a certificate |
+| [`traefik-strip-prefix.yaml`](traefik-strip-prefix.yaml) | path-prefix middleware for attendees |
+
+How a route ends up on HTTP or HTTPS:
+
+- **No annotation → HTTP only.** `web` is the default entrypoint, so routers
+  that name none attach to port 80 alone. That covers every attendee Ingress
+  (`*.nip.io`), and is what keeps Traefik from asking Let's Encrypt for nip.io
+  names, which share one rate limit with the whole internet.
+- **`traefik.ingress.kubernetes.io/router.entrypoints: websecure` → HTTPS.** TLS
+  and the `le` resolver are set on the `websecure` entrypoint itself, so that one
+  annotation is enough; Traefik orders the certificate for the Ingress host on
+  first sight. The host must also be added to `traefik-https.yaml`, or plain
+  HTTP on it gets a 404 instead of a redirect.
+
+That annotation goes on the `consoles/*`, `default/hello`,
+`headlamp/headlamp`, `registry/registry` and `rocketchat` Ingresses. The
+Rocket.Chat one belongs to its Helm release: set it with
+`--set-string 'ingress.annotations.traefik\.ingress\.kubernetes\.io/router\.entrypoints=websecure'`,
+or the next `helm upgrade` drops it.
+
+**IPv4 only.** The host names have AAAA records (`2a02:4780:28:966e::1`), but
+the cluster is single-stack IPv4: kube-proxy programs no IPv6 NodePort, so the
+port mapping is bound on `0.0.0.0` only and IPv6 connections to 80/443 are
+refused. Browsers fall back to IPv4, and so does Let's Encrypt (it retries
+over IPv4 when the IPv6 connection fails, not when it gets an HTTP error).
+Serving IPv6 needs a dual-stack kind cluster, i.e. a rebuild.
+
+### Migrating from the host nginx
+
+Until this is done, the server runs the previous layout: nginx with
+certbot-managed vhosts in `/etc/nginx/sites-enabled/` (`k8s`, `k8s-chat`,
+`k8s-registry`, `k8s-labs`) terminating TLS and passing plain HTTP to
+`127.0.0.1:8080`, which the kind node publishes for NodePort 30080.
+
+kind port mappings cannot be changed on a running cluster, and recreating it
+loses everything in it (consoles' homes, Rocket.Chat's MongoDB, the registry's
+images: the `local-path` volumes live in the node's docker volume, and the
+consoles setup is not in this repo). Instead, the mapping is edited in the
+node container's `hostconfig.json` while dockerd is stopped, which ends up in
+the same state as a cluster created with the right `extraPortMappings`.
+
+Do it outside session hours: from step 2 the consoles are unreachable until
+step 4 is finished, and step 4 restarts the whole cluster (a few minutes).
+
+From your machine:
+
+```sh
+S=root@srv2052563.hstgr.cloud
+kubectl get ingress -A -o yaml > ingress-backup.yaml
+```
+
+**1. Backups** (on the server):
+
+```sh
+D=/var/lib/docker/containers/$(docker inspect -f '{{.Id}}' training-control-plane)
+cp "$D/hostconfig.json" /root/hostconfig.json.bak
+tar czf /root/nginx-letsencrypt.tgz /etc/nginx /etc/letsencrypt
+```
+
+**2. Traefik and routes** (from your machine):
+
+```sh
+scp shared-cluster/traefik-values.yaml $S:/root/
+ssh $S helm upgrade traefik traefik/traefik -n traefik --version 41.7.1 -f /root/traefik-values.yaml
+kubectl -n traefik rollout status deploy/traefik
+
+kubectl apply -f shared-cluster/traefik-https.yaml
+A=traefik.ingress.kubernetes.io/router.entrypoints=websecure
+kubectl -n consoles annotate ingress --all "$A"
+kubectl -n default  annotate ingress hello     "$A"
+kubectl -n headlamp annotate ingress headlamp  "$A"
+kubectl -n registry annotate ingress registry  "$A"
+ssh $S "helm upgrade rocketchat rocketchat/rocketchat -n rocketchat --version 7.0.2 --reuse-values \
+  --set-string 'ingress.annotations.traefik\.ingress\.kubernetes\.io/router\.entrypoints=websecure'"
+```
+
+The certificates may already be issued at this point: Let's Encrypt follows
+the old nginx's HTTP→HTTPS redirect, and nginx passes the challenge to
+Traefik's `web` entrypoint.
+
+**3. Stop nginx** (on the server). Disabled, not removed, for the rollback:
+
+```sh
+systemctl disable --now nginx
+```
+
+**4. Publish the NodePorts on 80/443** (on the server):
+
+```sh
+D=/var/lib/docker/containers/$(docker inspect -f '{{.Id}}' training-control-plane)
+systemctl stop docker.socket docker        # stops the kind node with it
+python3 - "$D/hostconfig.json" <<'EOF'
+import json, sys
+p = sys.argv[1]
+h = json.load(open(p))
+h["PortBindings"]["30080/tcp"] = [{"HostIp": "0.0.0.0", "HostPort": "80"}]
+h["PortBindings"]["30443/tcp"] = [{"HostIp": "0.0.0.0", "HostPort": "443"}]
+json.dump(h, open(p, "w"))
+EOF
+systemctl start docker
+docker start training-control-plane        # restart policy is on-failure: not started by dockerd
+docker port training-control-plane         # 30080 -> 0.0.0.0:80, 30443 -> 0.0.0.0:443, 6443
+docker inspect -f '{{.NetworkSettings.Networks.kind.IPAddress}}' training-control-plane   # still 172.18.0.2
+```
+
+The node must come back on `172.18.0.2`: the API server certificate and the
+kubelet are bound to it. It does when it is the only container on the `kind`
+network, which is the case here.
+
+**5. Check** (from your machine, once `kubectl get nodes` answers again):
+
+```sh
+kubectl get nodes                                       # Ready
+kubectl get pods -A | grep -v -E 'Running|Completed'    # only the header, after a minute or two
+kubectl -n traefik logs deploy/traefik | grep -i -E 'acme|error'
+curl -sv https://srv2052563.hstgr.cloud/ -o /dev/null 2>&1 | grep -E 'issuer|HTTP/'   # Let's Encrypt
+curl -sI http://chat.srv2052563.hstgr.cloud/ | head -1                                 # 301
+curl -s -o /dev/null -w '%{http_code}\n' "http://bookinfo.$NS.195.35.2.222.nip.io/productpage"  # 200
+```
+
+Then by hand: a console opens and its terminal works (WebSocket), a
+`docker push` to the registry goes through, Rocket.Chat loads, and a
+`curl` to a `*.nip.io` URL from a console works (it goes out to the public IP
+and back in through the same mapping).
+
+**6. Clean up**, once it has run for a few days (on the server):
+
+```sh
+for c in srv2052563.hstgr.cloud chat.srv2052563.hstgr.cloud registry.srv2052563.hstgr.cloud; do
+  certbot delete --non-interactive --cert-name $c
+done
+apt purge nginx nginx-common python3-certbot-nginx
+```
+
+**Rollback** (before step 6). On the server:
+
+```sh
+D=/var/lib/docker/containers/$(docker inspect -f '{{.Id}}' training-control-plane)
+systemctl stop docker.socket docker
+cp /root/hostconfig.json.bak "$D/hostconfig.json"
+systemctl start docker && docker start training-control-plane
+systemctl enable --now nginx
+```
+
+then from your machine remove the opt-in, so the routes match on `web` again
+behind nginx:
+
+```sh
+A=traefik.ingress.kubernetes.io/router.entrypoints-
+kubectl -n consoles annotate ingress --all "$A"
+kubectl -n default  annotate ingress hello     "$A"
+kubectl -n headlamp annotate ingress headlamp  "$A"
+kubectl -n registry annotate ingress registry  "$A"
+ssh $S "helm rollback rocketchat -n rocketchat"
+```
+
+### Next rebuild
+
+When the cluster is recreated anyway, put the mapping in the server's kind
+config directly, so the `hostconfig.json` edit is not needed:
+
+```yaml
+extraPortMappings:
+  - { containerPort: 30080, hostPort: 80,  listenAddress: "0.0.0.0" }
+  - { containerPort: 30443, hostPort: 443, listenAddress: "0.0.0.0" }
+```
+
+alongside the API server on `0.0.0.0:6443`. That is also the time to go
+dual-stack (`networking.ipFamily: dual`) if IPv6 matters.
 
 ### What the module READMEs assume, and what is actually there
 
