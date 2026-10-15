@@ -1,0 +1,53 @@
+# Shared cluster only — applied once by the trainer, not by attendees.
+#
+# The Gateway API CRDs do not extend the built-in roles, so `admin` in their
+# namespace gave attendees no right on HTTPRoute & co (module 1 lab 2 step 5,
+# module 2 lab 2). The first two ClusterRoles are aggregated into the built-in
+# ones through their labels: every subject that already has `admin`/`edit`
+# (attendee users, console and headlamp ServiceAccounts, in their namespace)
+# or `view` (headlamp, cluster-wide) gets the matching rights, with no new
+# binding per attendee.
+#
+# GatewayClass is cluster-scoped: an aggregated rule only reaches it through
+# a ClusterRoleBinding, so attendees read it through trainee-cluster-read
+# (trainee-read.yaml) instead.
+#
+#   kubectl apply -f shared-cluster/gatewayapi-rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: gateway-api-edit
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-admin: "true"
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
+rules:
+  - apiGroups: [gateway.networking.k8s.io]
+    resources:
+      - httproutes
+      - grpcroutes
+      - tlsroutes
+      - referencegrants
+      - backendtlspolicies
+      # No GatewayClass exists, so a Gateway does nothing today; allowed so
+      # the Istio demo overlay (module1/lab2/step6) applies as is.
+      - gateways
+      - listenersets
+    verbs: [get, list, watch, create, update, patch, delete, deletecollection]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: gateway-api-view
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-view: "true"
+rules:
+  - apiGroups: [gateway.networking.k8s.io]
+    resources:
+      - httproutes
+      - grpcroutes
+      - tlsroutes
+      - referencegrants
+      - backendtlspolicies
+      - gateways
+      - listenersets
+    verbs: [get, list, watch]

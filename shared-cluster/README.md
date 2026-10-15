@@ -83,13 +83,53 @@ and a console. Then, once for the room:
 
 ```sh
 kubectl apply -f shared-cluster/traefik-strip-prefix.yaml
-kubectl apply -f shared-cluster/headlamp-view.yaml
+kubectl apply -f shared-cluster/trainee-read.yaml
+kubectl apply -f shared-cluster/gatewayapi-rbac.yaml
 ```
 
-[`headlamp-view.yaml`](headlamp-view.yaml) lets attendees read the whole
-cluster in Headlamp (every namespace, nodes, CRDs…, never Secrets) with the
-`headlamp` ServiceAccount token of their namespace; writes stay limited to
-their own namespace. A new attendee needs a subject added there.
+[`gatewayapi-rbac.yaml`](gatewayapi-rbac.yaml) adds the Gateway API types
+(HTTPRoute, GRPCRoute, ReferenceGrant, Gateway…) to the built-in `admin`,
+`edit` and `view` roles by aggregation, which the Gateway API CRDs do not do
+themselves. Needed from module 1 lab 2 step 5 on.
+
+[`trainee-read.yaml`](trainee-read.yaml) lets attendees read the whole
+cluster (every namespace, nodes, CRDs, APIServices…, never Secrets) from
+kubectl, their console and Headlamp, which is what Headlamp's overview and
+`linkerd check` / `linkerd viz check` need; writes stay limited to their own
+namespace. A new attendee needs a Headlamp subject added there.
+
+**Currently applied on top of all this:**
+[`trainee-cluster-admin.yaml`](trainee-cluster-admin.yaml) makes every attendee
+`cluster-admin` (certificate, console and Headlamp). It overrides the scoped
+grants above; `kubectl delete -f shared-cluster/trainee-cluster-admin.yaml`
+falls back to them.
+
+After `linkerd viz install`, also:
+
+```sh
+kubectl apply -f shared-cluster/linkerd-viz-rbac.yaml
+```
+
+[`linkerd-viz-rbac.yaml`](linkerd-viz-rbac.yaml) lets attendees port-forward
+into `linkerd-viz` (what `linkerd viz check | stat | top | edges` do) and
+`linkerd viz tap` their own namespace, not the others'.
+
+The dashboard is at `https://linkerd.srv2052563.hstgr.cloud/` (user
+`trainee`, password from the trainer); see
+[`linkerd-dashboard.yaml`](linkerd-dashboard.yaml) for the install flag and
+the password Secret it needs.
+
+Monitoring: kube-prometheus-stack in `monitoring`, installed with
+[`kube-prometheus-stack-values.yaml`](kube-prometheus-stack-values.yaml)
+(the commands are in its header). Grafana is at
+`https://grafana.srv2052563.hstgr.cloud/` (user `admin`, password in Secret
+`monitoring/grafana-admin`); Prometheus is at
+`http://kube-prometheus-stack-prometheus.monitoring.svc:9090` in the cluster.
+Prometheus picks up every ServiceMonitor, PodMonitor and PrometheusRule in any
+namespace (no `release` label needed), Grafana every ConfigMap labelled
+`grafana_dashboard: "1"`, and attendees get the `monitoring.coreos.com` types
+through `admin`/`edit`/`view`. etcd, scheduler, controller-manager and
+kube-proxy are not scraped: kind binds their metrics to 127.0.0.1.
 
 Edge setup (Traefik, TLS, port mapping) is described in
 [Trainer — the edge](#trainer--the-edge) below.
@@ -299,15 +339,15 @@ dual-stack (`networking.ipFamily: dual`) if IPv6 matters.
 ### What the module READMEs assume, and what is actually there
 
 The module READMEs say *"on the shared cluster the trainer has installed
-it"* for a number of add-ons. Today the cluster has **Traefik and nothing
-else**, and a **single node**. Before each day:
+it"* for a number of add-ons. Today the cluster has **Traefik, Linkerd + viz and kube-prometheus-stack**, and a **single node**. Before each day:
 
 | Needed by | Install | Status |
 | --- | --- | --- |
-| module 1 lab 2, every day after | Linkerd + linkerd-viz | not installed |
+| module 1 lab 2, every day after | Linkerd + linkerd-viz | **installed** |
 | module 1 lab 2 step 6 (demo) | Istio | not installed |
 | module 2 lab 1 step 4, module 3 lab 2 step 8 | several worker nodes with `topology.kubernetes.io/zone` labels | **single node** |
 | module 2 lab 2 | Chaos Mesh, with rights on Chaos objects for `admin` | not installed |
-| module 3 | metrics-server, VPA, Prometheus (+ adapter), KEDA, OpenCost | not installed |
+| module 3 | metrics-server, VPA, Prometheus Adapter, KEDA, OpenCost | not installed |
+| module 3, module 5 | kube-prometheus-stack | **installed** (no Linkerd proxy scrape yet) |
 | module 4 | Kyverno / Pod Security labels, audit log, Vault | not installed |
 | module 4 lab 2 step 4 | a CNI that enforces NetworkPolicy, and policies that let the `traefik` namespace reach `productpage` | to check |

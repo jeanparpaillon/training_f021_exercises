@@ -1,0 +1,41 @@
+# Shared cluster only — applied by the trainer, not by attendees.
+#
+# Makes every attendee cluster-admin, from all three identities they use:
+#
+#   - their kubectl certificate          group `trainees` (O=trainees)
+#   - their web console                  ServiceAccounts of namespace `consoles`
+#   - Headlamp                           ServiceAccount `headlamp` of their namespace
+#
+# This overrides every narrower grant in this directory (trainee-read.yaml,
+# gatewayapi-rbac.yaml, linkerd-viz-rbac.yaml, the namespace `admin`
+# RoleBindings, trainee-quota.yaml's protection). Those stay in place so that
+# deleting this binding falls back to the scoped setup:
+#
+#   kubectl delete -f shared-cluster/trainee-cluster-admin.yaml
+#
+# What cluster-admin means here: every Secret (other attendees' tokens, the
+# trainer's Headlamp token, Linkerd's CA key, Traefik's ACME account and
+# certificates), every namespace including kube-system and consoles, and
+# privileged pods. kind nodes are privileged containers, so a privileged pod
+# with a hostPath mount is root on the server itself.
+#
+#   kubectl apply -f shared-cluster/trainee-cluster-admin.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: trainees-cluster-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - { apiGroup: rbac.authorization.k8s.io, kind: Group, name: trainees }   # O=trainees in their certificates
+  - { apiGroup: rbac.authorization.k8s.io, kind: Group, name: "system:serviceaccounts:consoles" }
+  - { kind: ServiceAccount, name: headlamp, namespace: abdelatif }
+  - { kind: ServiceAccount, name: headlamp, namespace: ahlem }
+  - { kind: ServiceAccount, name: headlamp, namespace: feriel }
+  - { kind: ServiceAccount, name: headlamp, namespace: fouzia }
+  - { kind: ServiceAccount, name: headlamp, namespace: imad }
+  - { kind: ServiceAccount, name: headlamp, namespace: jean }
+  - { kind: ServiceAccount, name: headlamp, namespace: milissa }
+  - { kind: ServiceAccount, name: headlamp, namespace: yahia }

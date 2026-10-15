@@ -1,0 +1,38 @@
+# shared-cluster/mariadb-operator-chart.yaml — RBAC for installing mariadb-operator per namespace.
+# Names are prefixed `trainee-`: the chart itself creates `mariadb-operator-*`
+# ClusterRoles in its default (cluster-wide) mode, and a clash blocks helm install.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: trainee-mariadb-operator
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-admin: "true"
+rules:
+  - apiGroups: [k8s.mariadb.com]
+    resources: ["*"]                       # CRs, /status, /finalizers
+    verbs: ["*"]
+  - apiGroups: [discovery.k8s.io]
+    resources: [endpointslices, endpointslices/restricted]
+    verbs: [get, list, watch, create, update, patch, delete]
+  # Required by the operator's Role even though these APIs are not installed:
+  # RBAC checks a Role's rules against the creator's, installed or not.
+  - apiGroups: [cert-manager.io]
+    resources: [certificates]
+    verbs: [get, list, watch, create, patch]
+  - apiGroups: [monitoring.coreos.com]
+    resources: [servicemonitors]
+    verbs: [get, list, watch, create, patch]
+  - apiGroups: [snapshot.storage.k8s.io]
+    resources: [volumesnapshots]
+    verbs: [get, list, watch, create, patch, delete]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: trainee-mariadb-view
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-view: "true"
+rules:
+  - apiGroups: [k8s.mariadb.com]
+    resources: ["*"]
+    verbs: [get, list, watch]

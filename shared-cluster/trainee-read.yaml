@@ -1,19 +1,23 @@
 # Shared cluster only — applied once by the trainer, not by attendees.
 #
-# Attendees log in to Headlamp (https://srv2052563.hstgr.cloud/headlamp/) with
-# the token of the `headlamp` ServiceAccount of their namespace, which is
-# `admin` there and nothing else. This lets them *read* the whole cluster from
-# Headlamp: every namespace (the other attendees', kube-system, traefik…) and
-# the cluster-scoped objects Headlamp's overview needs.
+# Lets attendees *read* the whole cluster: every namespace (the other
+# attendees', kube-system, traefik, linkerd…) and the cluster-scoped objects
+# that Headlamp's overview and `linkerd check` / `linkerd viz check` look at.
+# Granted to all three identities an attendee uses:
+#
+#   - their kubectl certificate          group `trainees` (O=trainees)
+#   - their web console                  ServiceAccounts of namespace `consoles`
+#   - Headlamp                           ServiceAccount `headlamp` of their namespace
 #
 # Read only, and no Secrets: the built-in `view` role leaves them out, so the
-# other attendees' tokens and the trainer's stay hidden. Write access is still
-# limited to their own namespace by the existing `headlamp-admin` RoleBinding.
+# other attendees' tokens, the trainer's and Linkerd's CA keys stay hidden
+# (the `linkerd check` items that read them fail with "forbidden", which is
+# expected). Write access is still limited to their own namespace by their
+# `admin` RoleBindings.
 #
-# Only the Headlamp ServiceAccounts are bound, not the attendees' kubectl users
-# nor their console ServiceAccounts. A new attendee needs a subject added below.
+# A new attendee needs a Headlamp subject added below; the other two are groups.
 #
-#   kubectl apply -f shared-cluster/headlamp-view.yaml
+#   kubectl apply -f shared-cluster/trainee-read.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -41,8 +45,14 @@ rules:
   - apiGroups: [rbac.authorization.k8s.io]
     resources: [clusterroles, clusterrolebindings, roles, rolebindings]
     verbs: [get, list, watch]
+  - apiGroups: [gateway.networking.k8s.io]
+    resources: [gatewayclasses]
+    verbs: [get, list, watch]
   - apiGroups: [admissionregistration.k8s.io]
     resources: [mutatingwebhookconfigurations, validatingwebhookconfigurations]
+    verbs: [get, list, watch]
+  - apiGroups: [apiregistration.k8s.io]
+    resources: [apiservices]
     verbs: [get, list, watch]
   - apiGroups: [metrics.k8s.io]
     resources: [nodes, pods]
@@ -52,12 +62,14 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: trainees-headlamp-view
+  name: trainees-view
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: view
 subjects:
+  - { apiGroup: rbac.authorization.k8s.io, kind: Group, name: trainees }
+  - { apiGroup: rbac.authorization.k8s.io, kind: Group, name: "system:serviceaccounts:consoles" }
   - { kind: ServiceAccount, name: headlamp, namespace: abdelatif }
   - { kind: ServiceAccount, name: headlamp, namespace: ahlem }
   - { kind: ServiceAccount, name: headlamp, namespace: feriel }
@@ -70,12 +82,14 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: trainees-headlamp-cluster-read
+  name: trainees-cluster-read
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: trainee-cluster-read
 subjects:
+  - { apiGroup: rbac.authorization.k8s.io, kind: Group, name: trainees }
+  - { apiGroup: rbac.authorization.k8s.io, kind: Group, name: "system:serviceaccounts:consoles" }
   - { kind: ServiceAccount, name: headlamp, namespace: abdelatif }
   - { kind: ServiceAccount, name: headlamp, namespace: ahlem }
   - { kind: ServiceAccount, name: headlamp, namespace: feriel }

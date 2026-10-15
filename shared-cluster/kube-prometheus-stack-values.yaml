@@ -1,0 +1,96 @@
+# Shared cluster only — Helm values of the `kube-prometheus-stack` release.
+#
+#   helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+#   kubectl create namespace monitoring
+#   kubectl -n monitoring create secret generic grafana-admin \
+#     --from-literal=admin-user=admin --from-literal=admin-password='<password>'
+#   helm upgrade --install kube-prometheus-stack \
+#     prometheus-community/kube-prometheus-stack --version 92.7.0 \
+#     -n monitoring -f shared-cluster/kube-prometheus-stack-values.yaml
+#
+# Grafana is at https://grafana.srv2052563.hstgr.cloud/ (host also listed in
+# traefik-https.yaml). Prometheus and Alertmanager are not exposed:
+#   kubectl -n monitoring port-forward svc/kube-prometheus-stack-prometheus 9090
+# In-cluster URL (Prometheus Adapter, KEDA, OpenCost, Flagger):
+#   http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+
+# Attendees create ServiceMonitor / PodMonitor / PrometheusRule in their own
+# namespace: add the monitoring.coreos.com types to admin / edit / view.
+global:
+  rbac:
+    createAggregateClusterRoles: true
+
+# kind binds etcd, kube-scheduler, kube-controller-manager and kube-proxy
+# metrics to 127.0.0.1 on the node: unreachable from Prometheus, so their
+# targets would only be down and their alerts always firing.
+kubeEtcd:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+kubeProxy:
+  enabled: false
+defaultRules:
+  rules:
+    etcd: false
+    kubeSchedulerAlerting: false
+    kubeSchedulerRecording: false
+    kubeControllerManager: false
+    kubeProxy: false
+
+prometheus:
+  prometheusSpec:
+    # Pick up every ServiceMonitor / PodMonitor / rule in the cluster, not only
+    # the ones labelled `release: kube-prometheus-stack`.
+    ruleSelectorNilUsesHelmValues: false
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    probeSelectorNilUsesHelmValues: false
+    scrapeConfigSelectorNilUsesHelmValues: false
+    retention: 7d
+    retentionSize: 8GB
+    resources:
+      requests: {cpu: 200m, memory: 1Gi}
+      limits: {memory: 3Gi}
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: standard
+          accessModes: [ReadWriteOnce]
+          resources:
+            requests:
+              storage: 10Gi
+
+alertmanager:
+  alertmanagerSpec:
+    resources:
+      requests: {cpu: 10m, memory: 64Mi}
+      limits: {memory: 256Mi}
+
+grafana:
+  admin:
+    existingSecret: grafana-admin
+  # Dashboards as code: ConfigMaps labelled grafana_dashboard: "1", in any
+  # namespace (the chart default, kept explicit).
+  sidecar:
+    dashboards:
+      searchNamespace: ALL
+  grafana.ini:
+    server:
+      root_url: https://grafana.srv2052563.hstgr.cloud/
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    annotations:
+      traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    hosts:
+      - grafana.srv2052563.hstgr.cloud
+    path: /
+  persistence:
+    enabled: true
+    storageClassName: standard
+    size: 1Gi
+  resources:
+    requests: {cpu: 50m, memory: 128Mi}
+    limits: {memory: 512Mi}

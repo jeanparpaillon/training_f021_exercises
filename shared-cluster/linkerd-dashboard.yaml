@@ -1,0 +1,53 @@
+# Shared cluster only — applied once by the trainer, after `linkerd viz install`.
+#
+# The Linkerd dashboard at https://linkerd.srv2052563.hstgr.cloud/, behind a
+# shared basic-auth password. `linkerd viz dashboard` cannot serve attendees:
+# it port-forwards to localhost, which from a web console is the console pod.
+#
+# The dashboard rejects any Host header it was not told about (DNS-rebinding
+# guard), so viz must be installed with:
+#
+#   linkerd viz install \
+#     --set dashboard.enforcedHostRegexp='^linkerd\.srv2052563\.hstgr\.cloud$' \
+#     | kubectl apply -f -
+#
+# The password lives in a Secret created by hand, not in this repo:
+#
+#   kubectl -n linkerd-viz create secret generic dashboard-auth \
+#     --from-literal=users="$(htpasswd -nbB trainee '<password>')"
+#   kubectl apply -f shared-cluster/linkerd-dashboard.yaml
+#
+# The dashboard shows every namespace and can tap any meshed pod with its own
+# ServiceAccount, whoever logs in: hence the password. The host is also listed
+# in traefik-https.yaml for the HTTP -> HTTPS redirect. Traefik is not meshed,
+# so the l5d-dst-override header from Linkerd's ingress docs is not needed.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: dashboard-auth
+  namespace: linkerd-viz
+spec:
+  basicAuth:
+    secret: dashboard-auth
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dashboard
+  namespace: linkerd-viz
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.middlewares: linkerd-viz-dashboard-auth@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: linkerd.srv2052563.hstgr.cloud
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web
+                port:
+                  number: 8084

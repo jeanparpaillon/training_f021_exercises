@@ -1,0 +1,46 @@
+# Shared cluster only — applied by the trainer in every attendee namespace,
+# not by attendees (their `admin` role can read quotas, not change them).
+#
+#   for ns in abdelatif ahlem feriel fouzia imad jean milissa yahia; do
+#     kubectl -n "$ns" apply -f shared-cluster/trainee-quota.yaml
+#   done
+#   kubectl get resourcequota -A
+#
+# The node has 4 CPU / 16 GiB allocatable for 8 attendees. These are ceilings,
+# not reservations: 8 x 1 CPU of requests overcommits the node, and when
+# everybody pushes at once it is the scheduler (Pending pods) that stops them,
+# not the quota. limits.memory is what protects the node from an OOM.
+#
+# Existing pods keep running but count towards the quota; a namespace already
+# over it gets its next pods refused. A refused pod shows on the ReplicaSet
+# (`kubectl describe rs`, "exceeded quota: trainee"), not in `kubectl apply`.
+#
+# Named `trainee`, not `tenant`: module1/exerciseA/tenant applies its own
+# stricter quota on top, and the strictest one wins per resource.
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: trainee
+spec:
+  hard:
+    requests.cpu: "1"
+    requests.memory: 2Gi
+    # No limits.cpu: a CPU limit throttles instead of killing, which would
+    # skew the load labs of module 3.
+    limits.memory: 4Gi
+    pods: "20"
+    services.loadbalancers: "0"
+---
+# Required as soon as the quota covers requests: without these defaults every
+# pod that sets no requests (Bookinfo sets none) is rejected. Only applies to
+# pods created after it.
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: trainee
+spec:
+  limits:
+    - type: Container
+      defaultRequest: { cpu: 50m,  memory: 64Mi }
+      default:        { cpu: 500m, memory: 256Mi }
+      max:            { cpu: "2",  memory: 2Gi }

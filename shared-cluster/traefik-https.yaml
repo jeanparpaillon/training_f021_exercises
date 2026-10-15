@@ -37,7 +37,9 @@ spec:
     - match: >-
         Host(`srv2052563.hstgr.cloud`) ||
         Host(`chat.srv2052563.hstgr.cloud`) ||
-        Host(`registry.srv2052563.hstgr.cloud`)
+        Host(`registry.srv2052563.hstgr.cloud`) ||
+        Host(`linkerd.srv2052563.hstgr.cloud`) ||
+        Host(`grafana.srv2052563.hstgr.cloud`)
       middlewares:
         - name: to-https
       services:
