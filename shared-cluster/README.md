@@ -131,6 +131,18 @@ namespace (no `release` label needed), Grafana every ConfigMap labelled
 through `admin`/`edit`/`view`. etcd, scheduler, controller-manager and
 kube-proxy are not scraped: kind binds their metrics to 127.0.0.1.
 
+Then, for the Linkerd metrics (`request_total`, `response_latency_ms`… with
+`namespace` / `deployment` labels, for Grafana, PrometheusRules and Flagger):
+
+```sh
+kubectl apply --validate=false -f shared-cluster/linkerd-scrape.yaml
+```
+
+[`linkerd-scrape.yaml`](linkerd-scrape.yaml) holds Linkerd's own scrape jobs as
+ScrapeConfigs. The linkerd-viz Prometheus stays, for `linkerd viz` and its
+dashboard. (`--validate=false`: the OpenAPI download often times out over this
+link; the server still validates.)
+
 Edge setup (Traefik, TLS, port mapping) is described in
 [Trainer — the edge](#trainer--the-edge) below.
 
@@ -348,6 +360,6 @@ it"* for a number of add-ons. Today the cluster has **Traefik, Linkerd + viz and
 | module 2 lab 1 step 4, module 3 lab 2 step 8 | several worker nodes with `topology.kubernetes.io/zone` labels | **single node** |
 | module 2 lab 2 | Chaos Mesh, with rights on Chaos objects for `admin` | not installed |
 | module 3 | metrics-server, VPA, Prometheus Adapter, KEDA, OpenCost | not installed |
-| module 3, module 5 | kube-prometheus-stack | **installed** (no Linkerd proxy scrape yet) |
+| module 3, module 5 | kube-prometheus-stack | **installed**, with Linkerd metrics |
 | module 4 | Kyverno / Pod Security labels, audit log, Vault | not installed |
 | module 4 lab 2 step 4 | a CNI that enforces NetworkPolicy, and policies that let the `traefik` namespace reach `productpage` | to check |
