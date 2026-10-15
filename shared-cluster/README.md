@@ -122,8 +122,11 @@ the password Secret it needs.
 Monitoring: kube-prometheus-stack in `monitoring`, installed with
 [`kube-prometheus-stack-values.yaml`](kube-prometheus-stack-values.yaml)
 (the commands are in its header). Grafana is at
-`https://grafana.srv2052563.hstgr.cloud/` (user `admin`, password in Secret
-`monitoring/grafana-admin`); Prometheus is at
+`https://grafana.srv2052563.hstgr.cloud/`: attendees log in with their console
+name and password (`Editor`), created from `/root/users/consoles.txt` by
+[`grafana-users.sh`](grafana-users.sh), run on the server
+(`ssh $S 'bash -s' < shared-cluster/grafana-users.sh`, again after adding an
+attendee); the trainer is `admin`, password in Secret `monitoring/grafana-admin`; Prometheus is at
 `http://kube-prometheus-stack-prometheus.monitoring.svc:9090` in the cluster.
 Prometheus picks up every ServiceMonitor, PodMonitor and PrometheusRule in any
 namespace (no `release` label needed), Grafana every ConfigMap labelled
