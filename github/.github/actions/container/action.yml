@@ -1,0 +1,25 @@
+name: container
+description: Build and push the container image
+inputs:
+  docker_repo:
+    required: true
+  docker_user:
+    required: true
+  docker_token:
+    description: 'The Docker token to use'
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v2
+    - name: Log in to the Container registry
+      uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+      with:
+        registry: https://${{ inputs.docker_repo }}
+        username: ${{ inputs.docker_user }}
+        password: ${{ inputs.docker_token }}
+    - uses: docker/build-push-action@v2
+      with:
+        context: .
+        push: true
+        tags: ${{ inputs.docker_repo }}/tuto_dev_jean:latest, ${{ inputs.docker_repo }}/tuto_dev_jean:${{ github.ref_name }}

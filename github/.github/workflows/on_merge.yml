@@ -1,0 +1,15 @@
+name: On merge
+on:
+  push:
+    branches:
+      - main
+jobs:
+  container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ./.github/actions/container
+        with:
+          docker_repo: trialk033s3.jfrog.io/docker-trial
+          docker_user: jean@parpaillon.info
+          docker_token: ${{ secrets.JFROG_DOCKER_TOKEN }}
