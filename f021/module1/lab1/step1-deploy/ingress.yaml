@@ -1,0 +1,61 @@
+# Shared cluster variant — see ingress-kind.yaml.tmpl for kind.
+#
+# One entry point for the whole application: only `productpage` is exposed,
+# the other three services stay cluster-internal. That is the edge pattern
+# from slot 1, with Ingress as the gateway.
+#
+# Render it into ingress.yaml (git-ignored), which the kustomization uses:
+#
+#   sed "s/jean/$NS/g" lab1/step1-deploy/ingress.yaml.tmpl \
+#     > lab1/step1-deploy/ingress.yaml
+#
+# Attendees are told apart by host name: bookinfo.<ns>.195.35.2.222.nip.io.
+# nip.io resolves it to the server's public IP, whose nginx passes plain HTTP
+# for *.nip.io on to Traefik: curl from the web console and the browser on
+# your machine both reach it as is. No prefix to strip: productpage sees the
+# paths as they are.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bookinfo
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: bookinfo.jean.195.35.2.222.nip.io
+      http:
+        paths:
+          - path: /productpage
+            pathType: Prefix
+            backend:
+              service:
+                name: productpage
+                port:
+                  number: 9080
+          - path: /static
+            pathType: Prefix
+            backend:
+              service:
+                name: productpage
+                port:
+                  number: 9080
+          - path: /login
+            pathType: Prefix
+            backend:
+              service:
+                name: productpage
+                port:
+                  number: 9080
+          - path: /logout
+            pathType: Prefix
+            backend:
+              service:
+                name: productpage
+                port:
+                  number: 9080
+          - path: /api/v1/products
+            pathType: Prefix
+            backend:
+              service:
+                name: productpage
+                port:
+                  number: 9080
