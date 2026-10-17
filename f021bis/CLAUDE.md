@@ -31,7 +31,9 @@ module1/                   cluster administration (HA, upgrades, backup, trouble
   lab5/{break,check,reset,lib.sh,scenarios/N.sh}
                            fault injection; each scenario defines symptom,
                            break_it, check_it, fix_it
-module2/ … module4/        Ansible, Zabbix, Ansible certification (not written yet)
+module2/, module3/         Ansible, Zabbix (not written yet)
+module4/README.md          Ansible certification: spec of labs 1-5, lab0, exam
+                           (step files not written, nothing run yet)
 ```
 
 Bookinfo states are cumulative overlays: `bookinfo/` → `lab2/step3-install`
