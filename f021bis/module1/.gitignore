@@ -1,0 +1,4 @@
+# Linkerd trust anchor and issuer, generated in lab 2 step 3 (make certs).
+lab2/certs/
+# Backups copied out of the nodes in lab 4.
+lab4/backup/

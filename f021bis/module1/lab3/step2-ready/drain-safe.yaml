@@ -1,0 +1,157 @@
+# What makes a Deployment survive `kubectl drain` with no failed request.
+#
+#   replicas: 2              one replica can be evicted while the other serves
+#   topologySpreadConstraints
+#                            ... and the two are on different nodes, or both
+#                            go together. nodeTaintsPolicy: Honor ignores a
+#                            cordoned node (it carries the unschedulable
+#                            taint), so a drained pod can land next to its
+#                            twin instead of staying Pending. No
+#                            matchLabelKeys (F021 has it): the API server
+#                            copies those keys into each Pod's labelSelector,
+#                            and Velero's restore of such a Pod then fails
+#                            validation (lab 4)
+#   readinessProbe           the replacement gets traffic only once it
+#                            answers; the probe hits /health, which calls no
+#                            other service (F021 module 2: a probe that
+#                            follows dependencies turns "slow" into "down")
+#   startupProbe (reviews)   Open Liberty boots in tens of seconds; the other
+#                            probes wait for it instead of a big initial delay
+#   preStop sleep 5 s        the pod keeps serving while its removal from the
+#                            EndpointSlices reaches every proxy: deletion and
+#                            endpoint removal start at the same time
+#   proxy-wait-before-exit-seconds
+#                            the Linkerd proxy outlives the application, or
+#                            the last responses have no way out (a no-op with
+#                            native sidecars, kept so the manifest does not
+#                            depend on how Linkerd is installed)
+#
+# The PodDisruptionBudgets (pdb.yaml) are the other half: they are what
+# `kubectl drain` waits on.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: productpage-v1
+spec:
+  replicas: 2
+  template:
+    metadata:
+      annotations:
+        config.alpha.linkerd.io/proxy-wait-before-exit-seconds: "10"
+    spec:
+      terminationGracePeriodSeconds: 30
+      topologySpreadConstraints:
+        - topologyKey: kubernetes.io/hostname
+          maxSkew: 1
+          whenUnsatisfiable: DoNotSchedule
+          nodeTaintsPolicy: Honor
+          labelSelector:
+            matchLabels: { app: productpage, version: v1 }
+      containers:
+        - name: productpage
+          readinessProbe:
+            httpGet: { path: /health, port: 9080 }
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 2
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 5
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: details-v1
+spec:
+  replicas: 2
+  template:
+    metadata:
+      annotations:
+        config.alpha.linkerd.io/proxy-wait-before-exit-seconds: "10"
+    spec:
+      terminationGracePeriodSeconds: 30
+      topologySpreadConstraints:
+        - topologyKey: kubernetes.io/hostname
+          maxSkew: 1
+          whenUnsatisfiable: DoNotSchedule
+          nodeTaintsPolicy: Honor
+          labelSelector:
+            matchLabels: { app: details, version: v1 }
+      containers:
+        - name: details
+          readinessProbe:
+            httpGet: { path: /health, port: 9080 }
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 2
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 5
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ratings-v1
+spec:
+  replicas: 2
+  template:
+    metadata:
+      annotations:
+        config.alpha.linkerd.io/proxy-wait-before-exit-seconds: "10"
+    spec:
+      terminationGracePeriodSeconds: 30
+      topologySpreadConstraints:
+        - topologyKey: kubernetes.io/hostname
+          maxSkew: 1
+          whenUnsatisfiable: DoNotSchedule
+          nodeTaintsPolicy: Honor
+          labelSelector:
+            matchLabels: { app: ratings, version: v1 }
+      containers:
+        - name: ratings
+          readinessProbe:
+            httpGet: { path: /health, port: 9080 }
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 2
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 5
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reviews-v2
+spec:
+  replicas: 2
+  template:
+    metadata:
+      annotations:
+        config.alpha.linkerd.io/proxy-wait-before-exit-seconds: "10"
+    spec:
+      terminationGracePeriodSeconds: 30
+      topologySpreadConstraints:
+        - topologyKey: kubernetes.io/hostname
+          maxSkew: 1
+          whenUnsatisfiable: DoNotSchedule
+          nodeTaintsPolicy: Honor
+          labelSelector:
+            matchLabels: { app: reviews, version: v2 }
+      containers:
+        - name: reviews
+          startupProbe:
+            httpGet: { path: /health, port: 9080 }
+            periodSeconds: 2
+            failureThreshold: 60
+          readinessProbe:
+            httpGet: { path: /health, port: 9080 }
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 2
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 5

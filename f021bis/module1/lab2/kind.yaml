@@ -1,0 +1,17 @@
+# Labs 2 to 5 — `prod`: one control plane, one worker.
+#
+#   kind create cluster --name prod --config lab2/kind.yaml --image "$KIND_NODE_FROM"
+#
+# --image, not an `image:` per node: the version lives in versions.env only.
+#
+# productpage is a NodePort (30080, ../bookinfo/). The mapping publishes it on
+# 127.0.0.1:30080 of the console pod, which shares the network of the Docker
+# daemon running the nodes: `curl http://127.0.0.1:30080/productpage` from
+# the console.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - { containerPort: 30080, hostPort: 30080, listenAddress: "127.0.0.1", protocol: TCP }
+  - role: worker

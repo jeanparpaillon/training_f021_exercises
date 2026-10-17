@@ -1,0 +1,8 @@
+# Helm values of the `linkerd-viz` release (lab 2 steps 3 and 4).
+#
+# viz brings its own Prometheus, which is the biggest memory consumer of the
+# whole `prod` cluster. Six hours of history is plenty for a module where
+# every measurement is taken live.
+prometheus:
+  args:
+    storage.tsdb.retention.time: 6h

@@ -1,0 +1,24 @@
+# Bookinfo for module 1: F021's manifests, unchanged, in namespace `bookinfo`
+# of your own cluster, with productpage published on NodePort 30080
+# (127.0.0.1:30080 from the console, see lab2/kind.yaml).
+#
+# Every Bookinfo step of the module is an overlay on this directory:
+#
+#   bookinfo/                     lab 2 step 1   as F021 ships it
+#   lab2/step3-install/           lab 2 step 3   + meshed
+#   lab3/step2-ready/             lab 3 step 2   + drain-safe
+#   lab4/step1-stateful/          lab 4 step 1   + ratings on MySQL
+#
+# The namespace is set here, unlike in F021: the cluster is yours, there is
+# no per-attendee namespace to keep free.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: bookinfo
+
+resources:
+  - namespace.yaml
+  - ../../../f021/module1/lab1/base
+
+patches:
+  - path: productpage-nodeport.yaml

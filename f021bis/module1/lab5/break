@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# lab5/break <n> — inject scenario n into prod. Do not read scenarios/ first.
+source "$(dirname "$0")/lib.sh"
+n=${1:?usage: lab5/break <1-8>}
+f=$here/scenarios/$n.sh
+[ -f "$f" ] || die "no scenario $n"
+source "$f"
+check_it >/dev/null 2>&1 || die "prod is not healthy before scenario $n: lab5/reset first"
+break_it
+echo "Scenario $n is in. What you are told: $symptom."
+echo "lab5/check $n when you think it is fixed."

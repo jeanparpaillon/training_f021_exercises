@@ -1,0 +1,35 @@
+# Bookinfo, meshed (lab 2) and drain-safe: what lab 3 step 2 builds.
+#
+#   kubectl apply -k lab3/step2-ready
+#
+# Condensed from F021 module 2 lab 1 (steps 2 to 4), where each setting has
+# a step of its own; the comments in drain-safe.yaml say what each one is for.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Resources added here (pdb.yaml) do not inherit the base's namespace:
+# `namespace:` only transforms what its own kustomization lists.
+namespace: bookinfo
+
+resources:
+  - ../../lab2/step3-install
+  - pdb.yaml
+
+patches:
+  - path: drain-safe.yaml
+  # One version of reviews, two replicas of it. Two replicas of three
+  # Open Liberty JVMs is ~1 GiB more per pair than the room can afford,
+  # and a single version also makes the page deterministic: always
+  # reviews-v2, always black stars.
+  - patch: |
+      $patch: delete
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: reviews-v1
+  - patch: |
+      $patch: delete
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: reviews-v3

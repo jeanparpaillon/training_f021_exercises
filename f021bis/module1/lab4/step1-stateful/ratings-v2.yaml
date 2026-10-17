@@ -1,0 +1,46 @@
+# ratings-v2: the same Node service as v1, reading its ratings from MySQL.
+# From samples/bookinfo/platform/kube/bookinfo-ratings-v2-mysql.yaml
+# (Istio, Apache-2.0). Behind the same `ratings` Service (app: ratings).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ratings-v2
+  labels:
+    app: ratings
+    version: v2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ratings
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: ratings
+        version: v2
+    spec:
+      serviceAccountName: bookinfo-ratings
+      containers:
+        - name: ratings
+          image: registry.istio.io/release/examples-bookinfo-ratings-v2:1.20.3
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DB_TYPE
+              value: mysql
+            - name: MYSQL_DB_HOST
+              value: mysqldb
+            - name: MYSQL_DB_PORT
+              value: "3306"
+            - name: MYSQL_DB_USER
+              value: root
+            - name: MYSQL_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-credentials
+                  key: rootpasswd
+          ports:
+            - containerPort: 9080
+          readinessProbe:
+            httpGet: { path: /health, port: 9080 }
+            periodSeconds: 5

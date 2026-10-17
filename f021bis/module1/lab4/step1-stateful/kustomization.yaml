@@ -1,0 +1,32 @@
+# Bookinfo with state: ratings served by ratings-v2 from MySQL, on a
+# PersistentVolume. "Is it restored?" can then be answered by a row in a
+# table, not by "the pod is there".
+#
+#   kubectl apply -k lab4/step1-stateful
+#   kubectl -n bookinfo delete deploy ratings-v1 && kubectl -n bookinfo delete pdb ratings-v1
+#
+# (apply -k never deletes: ratings-v1 has to go by hand, or both versions
+# serve and the page shows the database's ratings only half of the time.)
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: bookinfo
+
+resources:
+  - ../../lab3/step2-ready
+  - mysql.yaml
+  - ratings-v2.yaml
+
+patches:
+  - patch: |
+      $patch: delete
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: ratings-v1
+  - patch: |
+      $patch: delete
+      apiVersion: policy/v1
+      kind: PodDisruptionBudget
+      metadata:
+        name: ratings-v1

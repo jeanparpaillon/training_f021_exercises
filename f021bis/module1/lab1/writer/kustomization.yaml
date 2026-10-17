@@ -1,0 +1,12 @@
+# The writer: a client of the API that writes once a second and logs what
+# it saw. Its log is lab 1's measurement.
+#
+#   kubectl apply -k lab1/writer
+#   kubectl -n writer logs -f deploy/writer
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: writer
+
+resources:
+  - writer.yaml

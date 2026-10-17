@@ -1,0 +1,46 @@
+# One PodDisruptionBudget per Deployment of drain-safe.yaml: an eviction
+# (drain, node upgrade, autoscaler) may take at most one of the two replicas
+# at a time. The eviction API refuses the next one until the replacement is
+# Ready, and `kubectl drain` waits and retries.
+#
+# A PDB only protects against VOLUNTARY disruptions, the ones that go
+# through the eviction API. A node that dies, an OOM kill, a `kubectl delete
+# pod` or `drain --disable-eviction` do not ask it.
+#
+# minAvailable: 1 is safe only because replicas is 2: on a one-replica
+# Deployment it blocks every drain forever.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: productpage-v1
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: { app: productpage, version: v1 }
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: details-v1
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: { app: details, version: v1 }
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ratings-v1
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: { app: ratings, version: v1 }
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: reviews-v2
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: { app: reviews, version: v2 }

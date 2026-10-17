@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Runs lab3/k6.js in a container of your console's Docker daemon, on its
+# host network — the console pod's, where kind publishes the NodePort on
+# 127.0.0.1:30080 (lab2/kind.yaml).
+#
+#   lab3/load                       10 req/s for 25 min, summary at the end
+#   DURATION=3m lab3/load           shorter, e.g. for a single drain
+#   lab3/load > k6.log 2>&1 &       in the background, read k6.log after
+#
+# Ctrl-C stops it early and still prints the summary.
+set -euo pipefail
+here=$(cd "$(dirname "$0")" && pwd)
+# shellcheck source=../versions.env
+source "$here/../versions.env"
+exec docker run --rm -i --network host \
+  -e RATE="${RATE:-10}" -e DURATION="${DURATION:-25m}" \
+  -e TARGET="${TARGET:-http://127.0.0.1:30080/productpage}" \
+  "$K6_IMAGE" run --quiet - < "$here/k6.js"

@@ -1,0 +1,26 @@
+# Helm values of the `linkerd-control-plane` release (lab 2 steps 3 and 4).
+#
+# In git, next to the chart version: what the cluster runs is "chart X with
+# these values", nothing typed on a command line and forgotten. Pass this
+# file on EVERY install and upgrade (never --reuse-values).
+#
+# The certificates are not here: they are passed with --set-file from
+# lab2/certs/ (git-ignored). In production the issuer would come from a
+# Secret managed by cert-manager (identity.issuer.scheme: kubernetes.io/tls,
+# as in the F021 fleet) and the trust anchor key would not exist anywhere
+# near the cluster.
+
+# One replica of each controller: a 2-node lab cluster. In production,
+# `controllerReplicas: 3` with the chart's HA values (values-ha.yaml in the
+# chart), which also adds PDBs and anti-affinity — lab 3 drains would
+# otherwise take the whole control plane down at once.
+controllerReplicas: 1
+
+# Proxies log warnings only: lab 5 reads application logs, not proxy chatter.
+proxy:
+  logLevel: warn,linkerd=info
+
+# The heartbeat CronJob reports to versioncheck.linkerd.io; with no way out
+# to the internet it fails every run and litters the namespace with Error
+# pods, which lab 5 does not need.
+disableHeartBeat: true

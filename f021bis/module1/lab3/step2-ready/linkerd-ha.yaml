@@ -1,0 +1,38 @@
+# Extra Helm values for `linkerd-control-plane`: the mesh's own control
+# plane, drain-safe. Passed AFTER lab2/values/control-plane.yaml, which it
+# overrides (later -f files win):
+#
+#   helm upgrade linkerd-control-plane linkerd-edge/linkerd-control-plane \
+#     -n linkerd --version "$LINKERD_TO" \
+#     -f lab2/values/control-plane.yaml -f lab3/step2-ready/linkerd-ha.yaml \
+#     --set-file … (the three certificates, as in lab 2)
+#
+# A subset of the chart's own values-ha.yaml, sized for two nodes.
+#
+# Why Bookinfo is not drain-safe without it: with one proxy-injector, a
+# drain of its node leaves a window with no injector. Its webhook fails
+# OPEN by default (failurePolicy Ignore), so every Bookinfo pod created in
+# that window — the drain's replacements — starts WITHOUT a proxy: unmeshed,
+# no mTLS, invisible to viz. Nothing fails, nothing warns.
+
+# Two of each controller (destination, identity, proxy-injector), on
+# different nodes, at most one evicted at a time.
+controllerReplicas: 2
+enablePodAntiAffinity: true
+enablePodDisruptionBudget: true
+controller:
+  podDisruptionBudget:
+    maxUnavailable: 1
+# Required anti-affinity on as many nodes as replicas leaves no room for the
+# surge pod of a rolling update, and the default maxUnavailable (25% of 2,
+# rounded down: 0) never removes an old one first: every upgrade of the
+# chart would hang with a new pod Pending. One may go before its
+# replacement is up.
+deploymentStrategy:
+  rollingUpdate:
+    maxUnavailable: 1
+    maxSurge: 25%
+
+# Fail closed: with no injector, pod creation is refused (and retried by the
+# ReplicaSet) instead of silently producing unmeshed pods.
+webhookFailurePolicy: Fail

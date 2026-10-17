@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Lab 4: an S3-compatible object store for Velero, as a container of your
+# console's Docker daemon on the `kind` network — next to the kind nodes,
+# outside any cluster, like a real backup target must be: a backup stored
+# in the cluster it protects goes down with it.
+#
+#   lab4/s3/start          start it (idempotent), create bucket `velero`,
+#                          print the URL to give Velero
+#
+# SeaweedFS (`weed server -s3`): master, volume, filer and S3 gateway in one
+# process. One identity, lab4/s3/s3.json, whose keys are the ones Velero is
+# given (lab4/s3/credentials-velero). Without identities SeaweedFS refuses
+# signed requests, and Velero's volume backups (kopia) sign theirs.
+#
+# The config is copied in with `docker cp`, not bind-mounted: the Docker
+# daemon is the console's dind sidecar, which does not see the console's
+# files.
+#
+# Pods reach it by IP: the name `s3` only exists in Docker's own DNS, which
+# the cluster's CoreDNS does not ask.
+set -euo pipefail
+here=$(cd "$(dirname "$0")" && pwd)
+# shellcheck source=../../versions.env
+source "$here/../../versions.env"
+
+if ! docker inspect s3 >/dev/null 2>&1; then
+  docker pull -q "$SEAWEEDFS_IMAGE" >/dev/null
+  docker create --name s3 --network kind --restart unless-stopped \
+    -v s3-data:/data "$SEAWEEDFS_IMAGE" \
+    server -s3 -s3.config=/etc/seaweedfs/s3.json -dir=/data >/dev/null
+  docker cp "$here/s3.json" s3:/etc/seaweedfs/s3.json
+fi
+docker start s3 >/dev/null
+
+until docker exec s3 sh -c 'echo "s3.bucket.list" | weed shell' >/dev/null 2>&1; do sleep 2; done
+docker exec s3 sh -c 'echo "s3.bucket.list" | weed shell' | grep -qw velero \
+  || docker exec s3 sh -c 'echo "s3.bucket.create -name velero" | weed shell' >/dev/null
+
+ip=$(docker inspect -f '{{.NetworkSettings.Networks.kind.IPAddress}}' s3)
+echo "http://$ip:8333"

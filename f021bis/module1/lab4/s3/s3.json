@@ -1,0 +1,11 @@
+{
+  "identities": [
+    {
+      "name": "velero",
+      "credentials": [
+        { "accessKey": "velero", "secretKey": "velero-lab4" }
+      ],
+      "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+    }
+  ]
+}

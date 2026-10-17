@@ -1,0 +1,15 @@
+# Lab 4 step 6 — `green`: the cluster Bookinfo migrates to. Same shape as
+# prod (lab2/kind.yaml); productpage is published on 127.0.0.1:30081, since
+# prod already holds 30080 of the console.
+#
+#   make green          (from module1/: creates it at K8S_TO, Linkerd, Velero)
+#
+# The Service keeps nodePort 30080 inside the cluster: the mapping is what
+# differs.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - { containerPort: 30080, hostPort: 30081, listenAddress: "127.0.0.1", protocol: TCP }
+  - role: worker

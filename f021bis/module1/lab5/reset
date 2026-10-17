@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# lab5/reset — undo every scenario, then re-apply the end state of lab 4.
+source "$(dirname "$0")/lib.sh"
+for f in "$here"/scenarios/*.sh; do
+  ( source "$f"; fix_it ) || echo "reset of $(basename "$f" .sh) failed, carrying on" >&2
+done
+$K apply -k "$here/../lab4/step1-stateful" >/dev/null
+$K -n $NS rollout status deploy --timeout=300s >/dev/null
+if page_ok 10; then echo "prod is back to the end of lab 4."; else die "prod is still not healthy: ask the trainer"; fi

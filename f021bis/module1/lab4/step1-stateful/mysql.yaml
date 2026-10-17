@@ -1,0 +1,129 @@
+# MySQL for ratings-v2, after samples/bookinfo/platform/kube/bookinfo-mysql.yaml
+# (Istio, Apache-2.0), with two changes:
+#
+#   - a PersistentVolumeClaim instead of an emptyDir;
+#   - mysql:8.4 instead of examples-bookinfo-mysqldb:1.20.3, which is MySQL
+#     9.3: 9.x removed mysql_native_password, the only authentication the
+#     ratings service's MySQL client speaks (ER_NOT_SUPPORTED_AUTH_MODE).
+#     8.4 still has it, off by default: --mysql-native-password=ON enables
+#     it, --authentication-policy makes root use it. The image's init
+#     script (mysqldb-init.sql) comes in as a ConfigMap instead.
+#
+# The init script creates database `test`, table `ratings`, with two rows
+# (ReviewID 1 → 5 stars, 2 → 4 stars) on the FIRST start only, when the
+# data directory is empty. After that, the rows are whatever is on the
+# volume: exactly what a backup has to bring back.
+#
+# One replica, Recreate: a single MySQL on a ReadWriteOnce volume cannot be
+# drain-safe. The PV is `local-path`: a directory on ONE node, so the pod
+# can only ever run there (look at the PV's nodeAffinity).
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-credentials
+type: Opaque
+stringData:
+  rootpasswd: password
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysqldb-init
+data:
+  mysqldb-init.sql: |
+    CREATE DATABASE test;
+    USE test;
+    CREATE TABLE `ratings` (
+      `ReviewID` INT NOT NULL,
+      `Rating` INT,
+      PRIMARY KEY (`ReviewID`)
+    );
+    INSERT INTO ratings (ReviewID, Rating) VALUES (1, 5);
+    INSERT INTO ratings (ReviewID, Rating) VALUES (2, 4);
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysqldb
+  annotations:
+    # local-path creates hostPath PVs by default, and Velero's file-system
+    # backup skips hostPath volumes — with a warning in the server log, and
+    # a backup that still says Completed. `local` PVs are backed up.
+    volumeType: local
+spec:
+  storageClassName: standard
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysqldb
+  labels:
+    app: mysqldb
+    service: mysqldb
+spec:
+  ports:
+    - port: 3306
+      name: tcp
+  selector:
+    app: mysqldb
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysqldb-v1
+  labels:
+    app: mysqldb
+    version: v1
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: mysqldb
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: mysqldb
+        version: v1
+      annotations:
+        # Velero file-system backup (lab 4 step 4), opt-in per volume: the
+        # data, and only the data — not the Linkerd proxy's volumes.
+        backup.velero.io/backup-volumes: var-lib-mysql
+    spec:
+      containers:
+        - name: mysqldb
+          image: mysql:8.4
+          imagePullPolicy: IfNotPresent
+          args:
+            - --mysql-native-password=ON
+            - --authentication-policy=mysql_native_password
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-credentials
+                  key: rootpasswd
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "mysqladmin ping -uroot -p\"$MYSQL_ROOT_PASSWORD\" --silent"]
+            periodSeconds: 5
+          volumeMounts:
+            - name: var-lib-mysql
+              mountPath: /var/lib/mysql
+            - name: init
+              mountPath: /docker-entrypoint-initdb.d
+      volumes:
+        - name: var-lib-mysql
+          persistentVolumeClaim:
+            claimName: mysqldb
+        - name: init
+          configMap:
+            name: mysqldb-init

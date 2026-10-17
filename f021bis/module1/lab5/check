@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# lab5/check <n> — is scenario n fixed?
+source "$(dirname "$0")/lib.sh"
+n=${1:?usage: lab5/check <1-8>}
+f=$here/scenarios/$n.sh
+[ -f "$f" ] || die "no scenario $n"
+source "$f"
+if check_it >/dev/null 2>&1; then
+  echo "Scenario $n: fixed. Note the path you took for the debrief."
+else
+  echo "Scenario $n: not yet."
+  exit 1
+fi

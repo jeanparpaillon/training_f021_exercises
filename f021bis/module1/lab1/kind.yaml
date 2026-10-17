@@ -1,0 +1,18 @@
+# Lab 1 — `ha`: three control-plane nodes, stacked etcd, no worker.
+#
+#   kind create cluster --name ha --config lab1/kind.yaml --image "$KIND_NODE_TO"
+#
+# With more than one control plane, kind adds a fourth container,
+# `ha-external-load-balancer` (Envoy), and points the kubeconfig at it: the
+# stable API endpoint of the theory. It health-checks each API server's
+# /healthz every 2 s and logs every check: `docker logs -f
+# ha-external-load-balancer`.
+#
+# The control planes keep their NoSchedule taint: the writer
+# (lab1/writer/) tolerates it.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+  - role: control-plane
+  - role: control-plane

@@ -1,0 +1,50 @@
+# What a three-year-old chart or CI pipeline looks like to today's API
+# server. Apply it as is and read every line of the output:
+#
+#   kubectl apply -f lab2/step2-apis/legacy.yaml
+#
+# Two different fates:
+#
+#   policy/v1beta1 PodDisruptionBudget   REMOVED in 1.25: the version is not
+#                                        served at all, the object is refused
+#                                        ("no matches for kind")
+#   v1 Endpoints                         DEPRECATED in 1.33: still served,
+#                                        accepted with a warning — and
+#                                        counted in the API server's
+#                                        apiserver_requested_deprecated_apis
+#
+# A refusal stops a pipeline; a warning scrolls past. The second one is the
+# dangerous one: it is next upgrade's refusal.
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: legacy-productpage
+  namespace: bookinfo
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: productpage
+---
+# A Service without a selector, and its endpoints by hand: the old way to
+# point a Service at something outside the cluster. EndpointSlice is the
+# replacement.
+apiVersion: v1
+kind: Service
+metadata:
+  name: legacy-external
+  namespace: bookinfo
+spec:
+  ports:
+    - port: 80
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: legacy-external
+  namespace: bookinfo
+subsets:
+  - addresses:
+      - ip: 192.0.2.10
+    ports:
+      - port: 80

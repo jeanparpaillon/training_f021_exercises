@@ -1,0 +1,95 @@
+# Every second: PATCH ConfigMap `writer` (a write: it needs etcd quorum),
+# then log one line —
+#
+#   12:03:04 200 0.012s        time, HTTP status (000 = no answer), duration
+#
+# It goes through the `kubernetes` Service, i.e. straight to the API
+# servers' own addresses (EndpointSlice `kubernetes` in `default`), not
+# through ha-external-load-balancer as your kubectl does. Compare the two
+# views in steps 2 to 5: the API servers maintain that EndpointSlice
+# themselves, removing one ~15 s after it stops renewing its lease.
+#
+# Pinned to ha-control-plane so that stopping the other two nodes never
+# stops the writer itself. Steps 2-5 never stop ha-control-plane; step 4
+# moves the etcd leader off it first.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: writer
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: writer
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: writer
+data:
+  n: "0"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: writer
+rules:
+  - apiGroups: [""]
+    resources: [configmaps]
+    resourceNames: [writer]
+    verbs: [get, patch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: writer
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: writer
+subjects:
+  - kind: ServiceAccount
+    name: writer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: writer
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: writer }
+  template:
+    metadata:
+      labels: { app: writer }
+    spec:
+      serviceAccountName: writer
+      nodeSelector:
+        kubernetes.io/hostname: ha-control-plane
+      # `ha` has no worker: the writer runs on a control plane, which kind
+      # leaves tainted when there are several of them.
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: writer
+          image: curlimages/curl:8.16.0
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              sa=/var/run/secrets/kubernetes.io/serviceaccount
+              url=https://kubernetes.default.svc/api/v1/namespaces/$(cat $sa/namespace)/configmaps/writer
+              n=0
+              while true; do
+                n=$((n + 1))
+                out=$(curl -s -o /dev/null -m 3 -w '%{http_code} %{time_total}s' \
+                  --cacert $sa/ca.crt -H "Authorization: Bearer $(cat $sa/token)" \
+                  -H 'Content-Type: application/merge-patch+json' \
+                  -X PATCH -d "{\"data\":{\"n\":\"$n\"}}" "$url")
+                echo "$(date +%T) $out"
+                sleep 1
+              done
+          resources:
+            requests: { cpu: 10m, memory: 16Mi }
+            limits: { memory: 64Mi }

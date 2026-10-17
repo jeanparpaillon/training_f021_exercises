@@ -1,0 +1,13 @@
+# The only way into Bookinfo from outside the cluster: a fixed NodePort,
+# which kind publishes on 127.0.0.1:30080 of the console (lab2/kind.yaml).
+# Any node answers on it, so draining one node in lab 3 does not cut it.
+apiVersion: v1
+kind: Service
+metadata:
+  name: productpage
+spec:
+  type: NodePort
+  ports:
+    - port: 9080
+      name: http
+      nodePort: 30080
