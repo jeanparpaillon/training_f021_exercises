@@ -18,7 +18,10 @@ namespace: bookinfo
 
 resources:
   - namespace.yaml
-  - ../../../f021/module1/lab1/base
+  - details.yaml
+  - ratings.yaml
+  - reviews.yaml
+  - productpage.yaml
 
 patches:
   - path: productpage-nodeport.yaml

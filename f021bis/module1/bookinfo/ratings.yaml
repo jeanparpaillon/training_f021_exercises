@@ -1,0 +1,49 @@
+# ratings — Node service, returns the star ratings. Called by reviews v2 and v3.
+# Adapted from samples/bookinfo/platform/kube/bookinfo.yaml (Istio, Apache-2.0).
+apiVersion: v1
+kind: Service
+metadata:
+  name: ratings
+  labels:
+    app: ratings
+    service: ratings
+spec:
+  ports:
+    - port: 9080
+      name: http
+  selector:
+    app: ratings
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: bookinfo-ratings
+  labels:
+    account: ratings
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ratings-v1
+  labels:
+    app: ratings
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ratings
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: ratings
+        version: v1
+    spec:
+      serviceAccountName: bookinfo-ratings
+      containers:
+        - name: ratings
+          image: registry.istio.io/release/examples-bookinfo-ratings-v1:1.20.3
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9080
