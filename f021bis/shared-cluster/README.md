@@ -38,7 +38,7 @@ they survive a console restart, but kind clusters come back stopped —
 | [`traefik-values.yaml`](traefik-values.yaml) | full Helm values of the `traefik` release (TLS, Let's Encrypt) |
 | [`base/`](base/) | namespace `consoles`, cluster-admin for trainees, HTTP→HTTPS redirect |
 | [`templates/trainee.yaml.tmpl`](templates/trainee.yaml.tmpl) | everything per trainee: namespace, admin RoleBinding, console (ttyd + dind), PVCs, Service, Ingress |
-| [`console/`](console/) | console image: ttyd, kubectl, kind, helm, docker CLI, ansible |
+| [`console/`](console/) | console image: ttyd, kubectl, kind, helm, etcdctl/etcdutl, docker CLI, ansible |
 | [`bin/render`](bin/render) | `trainees/` from the trainee names (git-ignored) |
 | [`bin/secrets`](bin/secrets) | runs on the server: console passwords from `/root/users/consoles.txt` |
 

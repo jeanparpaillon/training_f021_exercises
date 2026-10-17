@@ -7,6 +7,10 @@ ARG TTYD_VERSION=1.7.7
 ARG KUBERNETES_MINOR=v1.37
 ARG KIND_VERSION=v0.33.0
 ARG HELM_VERSION=v4.3.0
+# etcdctl / etcdutl only (no server): kubeadm's etcd for KUBERNETES_MINOR, so
+# the same minor as the clusters lab 3 upgrades to. The labs still go through
+# the etcd container (module1/lab0/etcdctl.sh), which has the certificates.
+ARG ETCD_VERSION=v3.7.0
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -47,6 +51,12 @@ RUN set -eu; cd /tmp \
  && sha256sum -c "$f.sha256sum" \
  && tar -xzf "$f" linux-amd64/helm \
  && install -m 0755 linux-amd64/helm /usr/local/bin/helm \
+ && f="etcd-${ETCD_VERSION}-linux-amd64.tar.gz" \
+ && curl -fsSLO "https://github.com/etcd-io/etcd/releases/download/${ETCD_VERSION}/$f" \
+ && curl -fsSL "https://github.com/etcd-io/etcd/releases/download/${ETCD_VERSION}/SHA256SUMS" \
+      | grep " $f\$" | sha256sum -c - \
+ && tar -xzf "$f" --strip-components=1 "etcd-${ETCD_VERSION}-linux-amd64/etcdctl" "etcd-${ETCD_VERSION}-linux-amd64/etcdutl" \
+ && install -m 0755 etcdctl etcdutl /usr/local/bin/ \
  && rm -rf /tmp/*
 
 COPY console-init /usr/local/bin/console-init
