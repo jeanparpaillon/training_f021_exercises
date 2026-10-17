@@ -1,0 +1,5 @@
+# The trainees' web consoles (trainees/<name>.yaml).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: consoles

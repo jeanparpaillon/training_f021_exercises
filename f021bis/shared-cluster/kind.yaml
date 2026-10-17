@@ -1,0 +1,31 @@
+# The f021bis dev cluster, on the server (make create).
+#
+# Single node. The edge is the same as f021's: Traefik's NodePorts 30080/30443
+# published on the server's 0.0.0.0:80/443, nothing in front of it
+# (traefik-values.yaml). IPv4 only, see the f021 shared-cluster README.
+#
+# Port mappings are fixed at creation: changing them means recreating the
+# cluster (make delete create), which loses every console's home and every
+# trainee's nested kind clusters.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: training-f021bis
+networking:
+  # Reachable from the trainer's machine (make kubeconfig). kind warns about
+  # it; the API still needs a client certificate or a token.
+  apiServerAddress: "0.0.0.0"
+  apiServerPort: 6443
+kubeadmConfigPatches:
+  - |
+    kind: ClusterConfiguration
+    apiServer:
+      certSANs:
+        - srv2052563.hstgr.cloud
+        - 195.35.2.222
+        - 127.0.0.1
+        - localhost
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - { containerPort: 30080, hostPort: 80,  listenAddress: "0.0.0.0", protocol: TCP }
+      - { containerPort: 30443, hostPort: 443, listenAddress: "0.0.0.0", protocol: TCP }

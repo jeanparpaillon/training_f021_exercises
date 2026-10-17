@@ -1,0 +1,53 @@
+# Helm values of the `traefik` release (make edge). This file is the whole
+# set: never --reuse-values. Same edge as f021 (see its traefik-values.yaml
+# for the reasoning behind each setting).
+#
+# Traefik is the only HTTP layer on the server: it terminates TLS and gets the
+# Let's Encrypt certificates itself. The kind node publishes the NodePorts
+# 30080/30443 below on 0.0.0.0:80/443 (kind.yaml).
+ingressClass:
+  isDefaultClass: true
+
+service:
+  type: NodePort
+  spec:
+    type: NodePort
+    # Keeps the client address: single node, so `Local` costs nothing.
+    externalTrafficPolicy: Local
+
+providers:
+  kubernetesIngress:
+    publishedService:
+      enabled: false
+
+ports:
+  web:
+    nodePort: 30080
+    # Routers that name no entrypoint are HTTP only: trainees' *.nip.io
+    # Ingresses never trigger a Let's Encrypt order.
+    asDefault: true
+    forwardedHeaders:
+      trustedIPs: ["10.244.0.0/16"]
+  websecure:
+    nodePort: 30443
+    http:
+      tls:
+        enabled: true
+        # Opt-in per Ingress: traefik.ingress.kubernetes.io/router.entrypoints: websecure
+        certResolver: le
+    transport:
+      respondingTimeouts:
+        readTimeout: 0
+
+certificatesResolvers:
+  le:
+    acme:
+      email: jean.parpaillon@gmail.com
+      storage: /data/acme.json
+      httpChallenge:
+        entryPoint: web
+
+persistence:
+  enabled: true
+  storageClass: standard
+  size: 128Mi

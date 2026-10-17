@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# Entrypoint of the console image: prepares $HOME, then execs its arguments
+# (ttyd … bash -l). $HOME is a PVC, empty on first start, so everything here
+# is done once and never overwrites what the trainee changed.
+set -euo pipefail
+
+# The PVC hides the image's /root.
+for f in .bashrc .profile; do
+  [ -e "$HOME/$f" ] || cp "/etc/skel/$f" "$HOME/$f"
+done
+
+marker='# added by console-init'
+if ! grep -qF "$marker" "$HOME/.bashrc"; then
+  cat >> "$HOME/.bashrc" <<EOF
+
+$marker
+export PATH="\$HOME/bin:\$PATH"
+source <(kubectl completion bash)
+source <(kind completion bash)
+source <(helm completion bash)
+alias k=kubectl
+complete -o default -F __start_kubectl k
+EOF
+fi
+
+# Context `training-f021bis`: this cluster, as the pod's ServiceAccount.
+# tokenFile rather than a copied token, so it follows the kubelet's rotation.
+# `kind create cluster` adds its own context and switches to it;
+# `kubectl config use-context training-f021bis` comes back.
+sa=/var/run/secrets/kubernetes.io/serviceaccount
+ctx=training-f021bis
+if [ -r "$sa/token" ] && ! kubectl config get-contexts "$ctx" >/dev/null 2>&1; then
+  kubectl config set-cluster "$ctx" --server=https://kubernetes.default.svc \
+    --certificate-authority="$sa/ca.crt" >/dev/null
+  kubectl config set "users.$ctx.tokenFile" "$sa/token" >/dev/null
+  kubectl config set-context "$ctx" --cluster="$ctx" --user="$ctx" \
+    --namespace="${NS:-default}" >/dev/null
+  kubectl config current-context >/dev/null 2>&1 || kubectl config use-context "$ctx" >/dev/null
+fi
+
+exec "$@"

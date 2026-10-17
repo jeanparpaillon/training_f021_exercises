@@ -1,0 +1,6 @@
+# make apply = kubectl apply -k . (after make render, which generates trainees/).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - base
+  - trainees

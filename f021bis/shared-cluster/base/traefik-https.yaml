@@ -1,0 +1,30 @@
+# HTTP -> HTTPS for the host names that have a certificate. A router of its
+# own rather than an entrypoint-wide redirection: trainees' *.nip.io names
+# stay plain HTTP on the same port. ACME HTTP-01 challenges still go through
+# (Traefik's internal challenge router has the highest priority).
+#
+# Needs Traefik's CRDs: make edge before make apply.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: to-https
+  namespace: traefik
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: to-https
+  namespace: traefik
+spec:
+  entryPoints: [web]
+  routes:
+    - match: Host(`srv2052563.hstgr.cloud`)
+      middlewares:
+        - name: to-https
+      services:
+        - kind: TraefikService
+          name: noop@internal

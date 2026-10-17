@@ -1,0 +1,4 @@
+# make kubeconfig: cluster-admin credentials.
+/kubeconfig
+# make render: generated from the server's users file.
+/trainees/

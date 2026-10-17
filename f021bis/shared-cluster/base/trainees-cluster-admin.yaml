@@ -1,0 +1,24 @@
+# Every trainee is cluster-admin (module 1 is cluster administration):
+#
+#   - from their web console     ServiceAccounts of namespace `consoles`
+#   - from a local kubectl       group `trainees`, i.e. O=trainees in a
+#                                client certificate, if one is ever issued
+#
+# On top of `admin` in their own namespace (trainees/<name>.yaml), which is
+# what is left if this file is dropped from base/kustomization.yaml (and the
+# binding deleted by hand: `kubectl apply -k` does not prune).
+#
+# What it means: every Secret, every namespace, privileged pods. kind nodes
+# are privileged containers, so a privileged pod with a hostPath mount is root
+# on the server itself — and the consoles' `dind` sidecar is exactly that.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: trainees-cluster-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - { apiGroup: rbac.authorization.k8s.io, kind: Group, name: "system:serviceaccounts:consoles" }
+  - { apiGroup: rbac.authorization.k8s.io, kind: Group, name: trainees }

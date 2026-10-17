@@ -1,0 +1,7 @@
+# What the cluster runs for the room, trainees aside (trainees/, generated).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  - trainees-cluster-admin.yaml
+  - traefik-https.yaml
