@@ -1,0 +1,45 @@
+apiVersion: apps/v1                # Specifies the API version for the Deployment resource
+kind: Deployment                   # Declares this resource as a Deployment
+metadata:
+  name: wordpress                  # Name of the Deployment
+  labels:
+    app: wordpress                 # Label to identify resources related to WordPress
+spec:
+  replicas: 1                      # Number of pod replicas to run
+  selector:
+    matchLabels:
+      app: wordpress               # Selects pods with label 'app: wordpress'
+  template:
+    metadata:
+      labels:
+        app: wordpress             # Labels applied to the pod template
+    spec:
+      containers:
+        - name: wordpress          # Name of the container
+          image: wordpress:6.0     # Docker image to use for the container
+          env:
+            - name: WORDPRESS_DB_HOST
+              value: mysql:3306    # MySQL database host and port
+            - name: WORDPRESS_DB_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: lab-config  # Name of the ConfigMap
+                  key: mysql-user         # MySQL database username key
+            - name: WORDPRESS_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: lab-secrets  # Name of the ConfigMap
+                  key: mysql-password     # MySQL database password key
+            - name: WORDPRESS_DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: lab-config  # Name of the ConfigMap
+                  key: mysql-database     # MySQL database name key
+          ports:
+            - containerPort: 80    # Exposes port 80 from the container
+          volumeMounts:
+            - name: wordpress-data
+              mountPath: /var/www/html # Mounts the volume at /var/www/html for persistent data
+      volumes:
+        - name: wordpress-data
+          emptyDir: {}             # Defines an ephemeral volume for WordPress data

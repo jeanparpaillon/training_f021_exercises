@@ -1,0 +1,14 @@
+apiVersion: v1                # API version for Kubernetes Service
+kind: Service                 # Resource type is Service
+metadata:
+  name: wordpress             # Name of the Service
+  labels:
+    app: wordpress            # Label to identify the Service
+spec:
+  type: NodePort              # Exposes the Service on each Node's IP at a static port
+  selector:
+    app: wordpress            # Selects Pods with label app=wordpress
+  ports:
+    - port: 80                # Port exposed by the Service
+      targetPort: 80          # Port on the Pod to forward traffic to
+      nodePort: 30080         # Static port on each Node for external access

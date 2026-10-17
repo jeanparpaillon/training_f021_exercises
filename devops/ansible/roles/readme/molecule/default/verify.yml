@@ -1,0 +1,11 @@
+- name: Verify README.md exists
+  hosts: all
+  tasks:
+    - name: Check README.md presence
+      stat:
+        path: "{{ ansible_env.HOME }}/README.md"
+      register: readme_file
+    - name: Assert README.md exists
+      assert:
+        that:
+          - readme_file.stat.exists

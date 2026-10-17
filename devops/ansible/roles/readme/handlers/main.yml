@@ -1,0 +1,3 @@
+- name: README copied
+  debug:
+    msg: "README.md has been copied successfully!"

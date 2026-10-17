@@ -1,0 +1,32 @@
+apiVersion: apps/v1                # Specifies the API version for the Deployment resource
+kind: Deployment                   # Declares this resource as a Deployment
+metadata:
+  name: wordpress                  # Name of the Deployment
+  labels:
+    app: wordpress                 # Label to identify resources related to WordPress
+spec:
+  replicas: 1                      # Number of pod replicas to run
+  selector:
+    matchLabels:
+      app: wordpress               # Selects pods with label 'app: wordpress'
+  template:
+    metadata:
+      labels:
+        app: wordpress             # Labels applied to the pod template
+    spec:
+      containers:
+        - name: wordpress          # Name of the container
+          image: wordpress:6.0     # Docker image to use for the container
+          envFrom:
+            - configMapRef:
+                name: wordpress-config
+            - secretRef:
+                name: lab-secrets
+          ports:
+            - containerPort: 80    # Exposes port 80 from the container
+          volumeMounts:
+            - name: wordpress-data
+              mountPath: /var/www/html # Mounts the volume at /var/www/html for persistent data
+      volumes:
+        - name: wordpress-data
+          emptyDir: {}             # Defines an ephemeral volume for WordPress data

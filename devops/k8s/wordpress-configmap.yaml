@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lab-config
+  labels:
+    app: wordpress
+  # Optionally, add namespace if needed
+  # namespace: default
+data:
+  mysql-user: wordpressuser
+  mysql-password: wordpresspass
+  mysql-database: wordpressdb

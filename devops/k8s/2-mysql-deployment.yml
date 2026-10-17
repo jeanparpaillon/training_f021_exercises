@@ -1,0 +1,30 @@
+apiVersion: apps/v1                # Specifies the API version for the Deployment resource
+kind: Deployment                   # Declares this resource as a Deployment
+metadata:
+  name: mysql                      # Name of the Deployment
+  labels:
+    app: mysql                     # Label to identify resources related to MySQL
+spec:
+  replicas: 1                      # Number of pod replicas to run
+  selector:
+    matchLabels:
+      app: mysql                   # Selects pods with label 'app: mysql'
+  template:
+    metadata:
+      labels:
+        app: mysql                 # Labels applied to the pod template
+    spec:
+      containers:
+        - name: mysql              # Name of the container
+          image: mysql:8.0         # Docker image to use for the container
+          envFrom:
+            - configMapRef:
+                name: wordpress-config
+          ports:
+            - containerPort: 3306  # Exposes port 3306 for MySQL traffic
+          volumeMounts:
+            - name: mysql-data
+              mountPath: /var/lib/mysql # Mounts the volume at MySQL data directory
+      volumes:
+        - name: mysql-data
+          emptyDir: {}             # Defines an ephemeral volume for MySQL data (data lost if pod is deleted)

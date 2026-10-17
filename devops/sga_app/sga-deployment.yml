@@ -1,0 +1,95 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sga-web-service
+  labels:
+    app: sga-web
+spec:
+  selector:
+    app: sga-web
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+      nodePort: 30080
+  type: LoadBalancer
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sga-web
+  labels:
+    app: sga-web
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: sga-web
+  template:
+    metadata:
+      labels:
+        app: sga-web
+    spec:
+      containers:
+        - name: sga-web
+          image: httpd:2.4
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: web-config
+              mountPath: /usr/local/apache2/conf/httpd.conf
+              subPath: httpd.conf
+      volumes:
+        - name: web-config
+          configMap:
+            name: sga-web-config
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sga-app-service
+  labels:
+    app: sga-app
+spec:
+  selector:
+    app: sga-app
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+      nodePort: 30081
+  type: LoadBalancer
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sga-app
+  labels:
+    app: sga-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: sga-app
+  template:
+    metadata:
+      labels:
+        app: sga-app
+    spec:
+      # If image is not public
+      # Add secret with:
+      # kubectl create secret docker-registry ghcr-secret \
+      #  --docker-server=ghcr.io \
+      #  --docker-username=USERNAME \
+      #  --docker-password=$GITHUB_TOKEN \
+      #  --docker-email=none
+      #imagePullSecrets:
+      #  - name: ghcr-secret
+      containers:
+        - name: sga-app
+          image: ghcr.io/jeanparpaillon/sga-app:latest
+          ports:
+            - containerPort: 8080

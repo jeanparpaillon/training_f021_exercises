@@ -1,0 +1,18 @@
+all:
+  hosts:
+    master:
+    worker1:
+    worker2:
+  children:
+    masters:
+      hosts:
+        master:
+    nodes:
+      hosts:
+        worker1:
+        worker2:
+    docker:
+      hosts:
+        master:
+        worker1:
+        worker2:
